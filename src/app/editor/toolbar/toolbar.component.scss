@@ -1,0 +1,139 @@
+/*.toolbar {
+  width: 15vh; // Zurück auf dein Originalmaß
+  flex-shrink: 0;
+  background: #2f3542;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%; // Nutzt die verfügbare Höhe des Elternelements
+
+  button {
+    padding: 10px 6px; // Etwas mehr Padding für bessere Klickbarkeit
+    background: #57606f;
+    color: #fff;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #747d8c;
+    }
+
+    // Aktiver Modus (Select, Platz, Verbindung)
+    &.active {
+     background: #1e90ff;
+           border-color: #1e90ff;
+           color: white; // Text weiß für bessere Lesbarkeit auf Blau
+           box-shadow: 0 0 5px rgba(30, 144, 255, 0.5);
+           font-weight: bold;
+    }
+
+    // Spezielle Farbe für Import
+    &.btn-import {
+      background: #ffa502;
+      color: #2f3542;
+      margin-top: 15px; // Ein kleiner Abstand zu den Werkzeugen oben
+      &:hover { background: #ff7b25; }
+    }
+
+    // Spezielle Farbe für Save
+    &.btn-save {
+      background: #2ed573;
+      // margin-top: auto; <-- ENTFERNT, damit er nicht nach unten rutscht
+      &:hover { background: #26af5a; }
+    }
+  }
+
+  // Optionale Trennlinie zwischen Werkzeugen und Datei-Aktionen
+  .divider {
+    height: 1px;
+    background: #57606f;
+    margin: 8px 0;
+  }
+}*/
+.toolbar {
+  display: flex;
+  flex-direction: column; // Untereinander statt nebeneinander
+  gap: 12px;
+  padding: 16px 8px;
+  background: #ffffff;
+  border-right: 1px solid #dcdde1; // Rahmen jetzt rechts statt unten
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+  width: 120px; // Feste Breite für vertikales Menü
+  height: 100vh; // Volle Bildschirmhöhe
+  position: fixed; // Bleibt am Rand kleben
+  left: 0;
+  top: 0;
+  z-index: 100;
+
+  .tool-group {
+    display: flex;
+    flex-direction: column; // Auch Gruppen-Inhalte untereinander
+    gap: 8px;
+    width: 100%;
+  }
+
+  .divider {
+    width: 80%; // Divider jetzt horizontal
+    height: 1px;
+    background: #dcdde1;
+    margin: 4px auto;
+  }
+
+  .spacer {
+    flex: 1; // Drückt Datei-Aktionen nach ganz unten
+  }
+
+  .tool-btn {
+    display: flex;
+    flex-direction: column; // Icon über dem Text für kompaktes Design
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 4px;
+    border: 1px solid transparent;
+    background: transparent;
+    border-radius: 8px;
+    font-size: 11px; // Etwas kleiner für vertikales Menü
+    font-weight: 500;
+    color: #2f3640;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+
+    .icon {
+      font-size: 20px; // Icons etwas größer machen
+    }
+
+    &:hover {
+      background: #f1f2f6;
+    }
+
+    &.active {
+      background: #e1f5fe;
+      color: #0288d1;
+      border-color: #b3e5fc;
+    }
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: white;
+    width: 100%;
+
+    &.import { background: #44bd32; }
+    &.save { background: #fbc531; color: #2f3640; }
+  }
+}

@@ -1,13 +1,10 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { EditorComponent } from './editor/editor.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  imports: [EditorComponent],
+  template: `<app-editor></app-editor>`
 })
-export class AppComponent {
-  title = 'conveyor-editor';
-}
+export class AppComponent {}

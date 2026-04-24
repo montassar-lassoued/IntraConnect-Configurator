@@ -1,0 +1,123 @@
+/* svg-canvas.component.scss */
+
+// Basis-Style für alle Förderer
+.conveyor {
+  fill: none;
+  stroke-width: 15px; // Etwas breiter für die Optik
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  // Gurtförderer: Glatte Fläche
+  &.type-belt {
+    stroke: #333;
+  }
+
+  // Rollenförderer: "Gestreift" durch Dasharray
+  &.type-roller {
+    stroke: #444;
+    stroke-dasharray: 2, 4; // Erzeugt den Rollen-Effekt
+  }
+
+  // Kettenförderer: Zwei schmale Außenlinien
+  &.type-chain {
+    stroke: #555;
+    stroke-dasharray: 20, 2;
+  }
+}
+
+// Die "laufende" Markierung oben drauf
+.flow-line {
+  fill: none;
+  stroke: #00ff00; // Neon-Grün für den Fluss
+  stroke-width: 2px;
+  stroke-dasharray: 8, 12;
+  animation: flowAnimation 1s linear infinite;
+  pointer-events: none;
+}
+// Umschalten auf Rückwärts
+.flow-line.direction-backward {
+  animation-direction: reverse;
+  stroke: #ffea00; // Optionale Farbe: Gelb für Rückwärtslauf
+}
+
+@keyframes flowAnimation {
+  from { stroke-dashoffset: 20; }
+  to { stroke-dashoffset: 0; }
+}
+.canvas {
+  width: 100%;
+  height: 100%;
+  background: #f8f9fa;
+  cursor: crosshair;
+}
+
+.selected {
+  stroke: orange;
+  stroke-width: 3;
+}
+.belt {
+  stroke: #333;
+  stroke-width: 1;
+  stroke-dasharray: 8 4;
+  animation: moveBelt 0.6s linear infinite;
+}
+
+@keyframes moveBelt {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -12; }
+}
+
+/* --- Gassen & RBG Styles --- */
+
+.aisle-track {
+  fill: #e9ecef;          // Hellgrau für den Fahrbereich
+  stroke: #dee2e6;        // Dezenter Rahmen
+  stroke-width: 1px;
+  stroke-dasharray: 4, 4; // Gestrichelte Linie deutet Schiene an
+  cursor: pointer;
+  transition: fill 0.2s;
+
+  &:hover {
+    fill: #dee2e6;
+  }
+
+  &.selected {
+    stroke: orange;       // Konsistent mit deinen anderen Elementen
+    stroke-width: 2px;
+    fill: #fff3e0;        // Leicht orangener Stich bei Auswahl
+  }
+}
+
+.rbg-unit {
+  fill: #d32f2f;          // Kräftiges Rot für das RBG
+  stroke: #b71c1c;
+  stroke-width: 1.5px;
+  rx: 2px;                // Leicht abgerundete Ecken
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  // Optional: Ein kleiner Lichteffekt oben drauf
+  filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.2));
+}
+
+.rbg-label {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  fill: #333;
+  text-anchor: middle;
+  pointer-events: none;   // Klick geht durch den Text auf das RBG
+}
+
+.aisle-resize-handle {
+  fill: #007bff;          // Blau für Interaktionspunkte
+  fill-opacity: 0.4;
+  cursor: ew-resize;
+
+  &:hover {
+    fill-opacity: 0.8;
+  }
+}

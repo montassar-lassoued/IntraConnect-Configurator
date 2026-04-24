@@ -1,0 +1,26 @@
+.layout {
+  display: grid;
+  grid-template-columns: 200px 1fr 250px; /* Toolbar | Canvas | Panel */
+  grid-template-rows: 100%; /* ganze Höhe */
+  height: 100vh;
+  gap: 5px;
+
+  app-toolbar {
+    grid-column: 1 / 2;
+    background: #e3e3e3;
+    padding: 5px;
+  }
+
+  app-svg-canvas {
+    grid-column: 2 / 3;
+    background: #f8f9fa;
+    border: 1px solid #ccc;
+    height: 100%;
+  }
+
+  app-property-panel {
+    grid-column: 3 / 4;
+    border-left: 1px solid #ccc;
+    height: 100%;
+  }
+}

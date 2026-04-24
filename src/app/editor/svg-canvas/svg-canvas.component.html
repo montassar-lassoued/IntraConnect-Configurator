@@ -1,0 +1,116 @@
+<svg class="canvas"
+     (mousedown)="onCanvasDown($event)"
+     (mousemove)="onMouseMove($event)"
+     (contextmenu)="$event.preventDefault()">
+
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+  </defs>
+
+  <g *ngFor="let a of arrows; trackBy: trackById">
+    <path [attr.d]="getArrowPath(a)"
+          stroke="transparent"
+          stroke-width="30"
+          fill="none"
+          (dblclick)="addWaypoint($event, a)"
+          (mousedown)="startDrag($event, a)"
+          style="cursor: pointer;">
+    </path>
+
+    <path [attr.d]="getArrowPath(a)"
+          class="conveyor-base"
+          stroke="#222"
+          stroke-width="20px"
+          fill="none">
+    </path>
+
+    <path [attr.d]="getArrowPath(a)"
+          [class]="'conveyor type-' + a.type"
+          [class.selected]="selected.includes(a)">
+    </path>
+
+    <path *ngIf="a.speed > 0"
+          [attr.d]="getArrowPath(a)"
+          class="flow-line direction-' + a.direction"
+          [style.animation-duration]="(2 / a.speed) + 's'">
+    </path>
+
+    <ng-container *ngIf="selected.includes(a)">
+      <circle *ngFor="let wp of a.waypoints; let i = index"
+              [attr.cx]="wp.x" [attr.cy]="wp.y" r="6"
+              fill="white" stroke="blue" stroke-width="2"
+              (mousedown)="startDragWaypoint($event, a, i)"
+              style="cursor: move;">
+      </circle>
+    </ng-container>
+  </g>
+
+  <g *ngFor="let r of rects; trackBy: trackById">
+    <rect [attr.x]="r.x" [attr.y]="r.y"
+          [attr.width]="r.width" [attr.height]="r.height"
+          [class.selected]="selected.includes(r)"
+          fill="white" stroke="blue" stroke-width="2"
+          (mousedown)="startDrag($event, r)"
+          (mouseenter)="hoveredRect = r"
+          (mouseleave)="hoveredRect = null">
+    </rect>
+
+    <ng-container *ngIf="hoveredRect === r || arrowStartPoint">
+      <circle *ngFor="let p of getConnectors(r)"
+              [attr.cx]="p.x" [attr.cy]="p.y" r="5"
+              fill="orange" class="connector"
+              (mousedown)="onConnectorClick($event, p, r)">
+      </circle>
+    </ng-container>
+
+    <rect *ngIf="selected.includes(r)"
+          [attr.x]="r.x + r.width - 6" [attr.y]="r.y + r.height - 6"
+          width="12" height="12" fill="blue" style="cursor: nwse-resize"
+          (mousedown)="$event.stopPropagation(); resizeTarget = r">
+    </rect>
+    <text [attr.x]="r.x + r.width / 2"
+          [attr.y]="r.y + r.height / 2"
+          dominant-baseline="central"
+          text-anchor="middle"
+          pointer-events="none"
+          style="font-family: Arial; font-size: 12px; fill: #333;">
+      {{ r.name }}
+    </text>
+  </g>
+  <g *ngFor="let aisle of aisles; trackBy: trackById">
+
+    <rect [attr.x]="aisle.x"
+          [attr.y]="aisle.y"
+          [attr.width]="aisle.width"
+          [attr.height]="aisle.height"
+          class="aisle-track"
+          [class.selected]="selected.includes(aisle)"
+          (mousedown)="startDrag($event, aisle)">
+    </rect>
+
+    <g *ngIf="aisle.rbg" [attr.transform]="getRbgTransform(aisle)">
+      <rect [attr.width]="aisle.rbg.width"
+            [attr.height]="aisle.rbg.height"
+            class="rbg-unit"
+            (mousedown)="startDrag($event, aisle)">
+      </rect>
+
+      <text class="rbg-label"
+            [attr.x]="aisle.rbg.width / 2"
+            y="-6">
+        {{ aisle.rbg.name }}
+      </text>
+    </g>
+
+    <rect *ngIf="selected.includes(aisle)"
+          [attr.x]="aisle.x + aisle.width - 6"
+          [attr.y]="aisle.y"
+          [attr.height]="aisle.height"
+          width="12"
+          class="aisle-resize-handle"
+          (mousedown)="$event.stopPropagation(); resizeTarget = aisle">
+    </rect>
+  </g>
+</svg>
