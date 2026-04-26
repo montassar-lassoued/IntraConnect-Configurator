@@ -1,47 +1,12 @@
-<div class="toolbar">
-  <div class="tool-group">
-    <button class="tool-btn"
-            (click)="set('select')"
-            [class.active]="currentMode === 'select'"
-            title="Auswählen">
-      <span class="icon">🔍</span> Select
-    </button>
-  </div>
+<div class="sidebar-content">
+  <h3>Views</h3>
+  <button (click)="setView('visualization')" [class.active]="view === 'visualization'">🖼️ Visu</button>
+  <button (click)="setView('processors')" [class.active]="view === 'processors'">⚙️ Processors</button>
 
   <div class="divider"></div>
 
-  <div class="tool-group">
-    <button class="tool-btn"
-            (click)="set('draw-rect')"
-            [class.active]="currentMode === 'draw-rect'"
-            title="SPS Platz hinzufügen">
-      <span class="icon">🟦</span> Platz
-    </button>
-    <button class="tool-btn"
-            (click)="set('draw-arrow')"
-            [class.active]="currentMode === 'draw-arrow'"
-            title="Förderstrecke verbinden">
-      <span class="icon">➡️</span> Verbindung
-    </button>
-    <button class="tool-btn"
-            (click)="set('draw-aisle')"
-            [class.active]="currentMode === 'draw-aisle'"
-            title="Gasse und RBG zeichnen">
-      <span class="icon">🛤️</span> Gasse / RBG
-    </button>
-  </div>
-
-  <div class="spacer"></div>
-
-  <div class="tool-group">
-    <input type="file" #fileInput (change)="onFileSelected($event)" accept=".xml" style="display: none">
-
-    <button class="action-btn import" (click)="fileInput.click()">
-      <span class="icon">📂</span> Laden
-    </button>
-
-    <button class="action-btn save" (click)="onSaveXml()">
-      <span class="icon">💾</span> Speichern
-    </button>
-  </div>
+  <h3>Tools</h3>
+  <button (click)="setMode('select')" [class.active]="currentMode === 'select'">🖱️ Select</button>
+  <button (click)="setMode('draw-rect')" [class.active]="currentMode === 'draw-rect'">⬛ Rect</button>
+  <button (click)="setMode('draw-arrow')" [class.active]="currentMode === 'draw-arrow'">➡️ Arrow</button>
 </div>

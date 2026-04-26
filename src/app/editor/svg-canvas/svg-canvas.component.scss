@@ -1,5 +1,13 @@
-/* svg-canvas.component.scss */
 
+/* svg-canvas.component.scss */
+line {
+  pointer-events: none; // Die orange Vorschau-Linie darf keine Klicks abfangen!
+}
+
+.connector {
+  cursor: pointer;
+  pointer-events: all; // Sicherstellen, dass die Punkte Klicks fangen
+}
 // Basis-Style für alle Förderer
 .conveyor {
   fill: none;
@@ -119,5 +127,49 @@
 
   &:hover {
     fill-opacity: 0.8;
+  }
+}
+
+.processor-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+}
+
+.processor-card {
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #555;
+  }
+}
+
+.field-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr; // Name und Klasse nebeneinander
+  gap: 15px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  label {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 4px;
+  }
+  input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
   }
 }

@@ -1,26 +1,521 @@
-.layout {
-  display: grid;
-  grid-template-columns: 200px 1fr 250px; /* Toolbar | Canvas | Panel */
-  grid-template-rows: 100%; /* ganze Höhe */
+// Grundlayout
+
+.app-container {
+  display: flex;
   height: 100vh;
-  gap: 5px;
+  width: 100vw;
+  overflow: hidden;
+  background: #f0f2f5;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
-  app-toolbar {
-    grid-column: 1 / 2;
-    background: #e3e3e3;
-    padding: 5px;
+// LINKER NAV-BEREICH (Breiter für Modulnamen)
+.sidebar-left {
+  width: 220px;
+  background: #2c3e50;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    color: #bdc3c7;
+    cursor: pointer;
+    padding: 12px 20px;
+    font-size: 14px;
+    transition: 0.2s;
+    gap: 15px;
+
+    .icon { font-size: 20px; width: 24px; text-align: center; }
+    &:hover { color: white; background: rgba(255,255,255,0.05); }
+    &.active {
+      color: #3498db;
+      background: rgba(52,152,219,0.1);
+      border-right: 4px solid #3498db;
+    }
   }
 
-  app-svg-canvas {
-    grid-column: 2 / 3;
+  // FESTES UNTERMENÜ
+  .sub-nav-list {
+    margin-top: 15px;
+    padding: 0 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .sub-nav-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: #95a5a6;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+
+      .status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #555;
+        margin-right: 12px;
+      }
+
+      .mod-name { flex: 1; }
+
+      .add-icon {
+        color: #2ecc71;
+        font-weight: bold;
+        font-size: 16px;
+      }
+
+      &:hover {
+        background: rgba(255,255,255,0.08);
+        color: white;
+      }
+
+      &.exists {
+        color: #3498db;
+        background: rgba(52,152,219,0.05);
+        .status-indicator { background: #3498db; box-shadow: 0 0 5px #3498db; }
+      }
+    }
+  }
+.file-management {
+    padding: 10px 0;
+
+    .nav-item.action {
+      background: rgba(255, 255, 255, 0.05);
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #3498db; // Ein schönes Blau für Aktionen
+
+      &:hover {
+        background: #3498db;
+        color: white;
+      }
+
+      &.disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        filter: grayscale(1);
+      }
+    }
+  }
+
+  .sidebar-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 10px 15px;
+  }
+}
+
+.main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #f8f9fa;
+}
+
+// TOOLBAR
+.top-toolbar {
+  height: 55px;
+  background: white;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 10;
+
+  .tool-group {
+    display: flex;
+    gap: 8px;
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 14px;
+      border: 1px solid #ced4da;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: 0.2s;
+
+      &:hover { background: #f1f3f5; }
+      &.active { background: #3498db; color: white; border-color: #2980b9; }
+      &.btn-primary { background: #2ecc71; color: white; border: none; &:hover { background: #27ae60; } }
+      &.btn-export { background: #34495e; color: white; border: none; margin-left: 20px; }
+    }
+  }
+}
+
+.content-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.editor-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+// MODUL-EDITOR CARDS
+.module-editor-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  padding-bottom: 100px;
+}
+
+.module-card {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  overflow: hidden;
+
+  .module-card-header {
+    background: #f1f3f5;
+    padding: 12px 20px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .module-label { font-weight: bold; color: #495057; text-transform: uppercase; letter-spacing: 0.5px; }
+    .btn-small-danger {
+      background: transparent; border: 1px solid #e74c3c; color: #e74c3c;
+      padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
+      &:hover { background: #e74c3c; color: white; }
+    }
+  }
+
+  .module-card-body { padding: 20px; }
+}
+// Container für die Prozessoren-Liste
+.list-editor {
+  display: grid;
+  //grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 10px;
+  align-items: start;
+
+  .p-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+    position: relative;
+    border-top: 4px solid #9b59b6; // Eine eigene Akzentfarbe für Prozessoren (Lila)
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+      border-color: #9b59b6;
+    }
+
+    &.selected {
+      border-color: #9b59b6;
+      background: rgba(155, 89, 182, 0.02);
+      outline: 2px solid rgba(155, 89, 182, 0.2);
+    }
+
+    .card-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      label {
+        font-size: 10px;
+        font-weight: bold;
+        color: #95a5a6;
+        text-transform: uppercase;
+        margin-bottom: -8px;
+        z-index: 1;
+        margin-left: 8px;
+      }
+
+      input {
+        padding: 10px 12px;
+        border: 1px solid #edf0f2;
+        border-radius: 6px;
+        font-size: 13px;
+        background: #f8f9fa;
+        color: #2c3e50;
+        transition: border 0.2s;
+
+        &:focus {
+          outline: none;
+          border-color: #9b59b6;
+          background: white;
+        }
+
+        &::placeholder {
+          color: #bdc3c7;
+        }
+      }
+
+      // Das erste Feld (Name) etwas prominenter
+      input:first-child {
+        font-weight: bold;
+        font-size: 14px;
+      }
+    }
+
+    .btn-icon {
+      align-self: flex-end;
+      background: #fff5f5;
+      color: #e74c3c;
+      border: 1px solid #fed7d7;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #e74c3c;
+        color: white;
+      }
+    }
+  }
+}
+// XML-TAG BLÖCKE
+.tag-block {
+  border: 1px solid #e9ecef;
+  border-left: 4px solid #3498db; // Standardmäßig blau für Container
+  border-radius: 4px;
+  margin-bottom: 15px;
+  background: #fff;
+  transition: all 0.2s ease;
+
+  // Wenn ein Tag innerhalb eines anderen liegt
+  &.nested {
+    margin-left: 10px;
+    border-left-color: #bdc3c7; // Etwas dezenter für Unterelemente
+    box-shadow: -2px 0 5px rgba(0,0,0,0.02);
+  }
+
+  .tag-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 15px;
     background: #f8f9fa;
-    border: 1px solid #ccc;
-    height: 100%;
+    border-bottom: 1px solid #f1f3f5;
+
+    .tag-name {
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      color: #8e44ad; // XML-Tag Farbe
+    }
+
+    .tag-bracket {
+      color: #adb5bd;
+      font-weight: normal;
+    }
+
+    .btn-minimal {
+      background: none; border: none; color: #adb5bd;
+      cursor: pointer; font-size: 16px;
+      &:hover { color: #e74c3c; }
+    }
+
+    // Speziell für den Footer-Tag (schließendes Tag)
+    &.footer-tag {
+      border-bottom: none;
+      border-top: 1px solid #f1f3f5;
+      background: #fcfcfc;
+      opacity: 0.6;
+      font-size: 0.9em;
+    }
   }
 
-  app-property-panel {
-    grid-column: 3 / 4;
-    border-left: 1px solid #ccc;
-    height: 100%;
+  // DER ENTSCHEIDENDE TEIL: Einrückung des Inhalts
+  .tag-content {
+    padding: 15px 15px 15px 25px; // 25px Padding links erzeugt den "Baum-Effekt"
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
   }
+}
+
+// ATTRIBUTE GRID
+.attribute-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 10px;
+  background: rgba(52, 152, 219, 0.03);
+  border-radius: 4px;
+
+  .input-field {
+    display: flex;
+    flex-direction: column;
+    label { font-size: 10px; color: #7f8c8d; margin-bottom: 2px; text-transform: uppercase; }
+    input {
+      padding: 4px 8px; border: 1px solid #dcdde1; border-radius: 3px; font-size: 12px;
+      &:focus { outline: none; border-color: #3498db; background: white; }
+    }
+  }
+}
+
+// TEXT-TAGS (z.B. Username/Password)
+.text-tag-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 5px 0;
+
+  .text-input-field {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 4px 0;
+    border-bottom: 1px solid #f8f9fa;
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #2c3e50;
+      min-width: 120px; // Einheitliche Breite für Labels wie "Username"
+    }
+
+    input {
+      flex: 1;
+      max-width: 400px;
+      padding: 5px 8px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      font-size: 13px;
+      &:focus { border-color: #3498db; outline: none; }
+    }
+  }
+}
+
+// BUTTONS FÜR NEUE ELEMENTE
+.nested-children-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// FOOTER ACTIONS (Die Buttons zum Hinzufügen)
+.tag-footer-actions, .module-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+
+  .btn-add-sub {
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 15px;
+    border: 1px dashed #bdc3c7;
+    background: white;
+    color: #7f8c8d;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: #3498db;
+      color: #3498db;
+      background: rgba(52, 152, 219, 0.05);
+    }
+  }
+}
+
+.module-actions {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+  button { border-color: #2ecc71; color: #2ecc71; background: rgba(46,204,113,0.05);
+    &:hover { background: #2ecc71; color: white; }
+  }
+}
+
+
+.sub-nav-item.active-sub {
+  background: rgba(52, 152, 219, 0.2) !important;
+  color: white !important;
+}
+
+// ÜBERSICHT GRID
+.modules-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  padding: 10px;
+
+  .module-summary-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+
+    .info {
+      .type { font-size: 1.2rem; font-weight: bold; color: #2c3e50; display: block; margin-bottom: 10px; }
+      .enabled-toggle { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: #6c757d; }
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      .btn-edit { background: #3498db; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+      .btn-delete { background: #fee2e2; color: #dc2626; border: none; padding: 8px; border-radius: 5px; cursor: pointer; }
+    }
+  }
+}
+
+// DETAIL ANSICHT
+.single-module-editor {
+  .btn-back {
+    background: white; border: 1px solid #ced4da; padding: 8px 16px; border-radius: 6px;
+    cursor: pointer; margin-bottom: 25px; transition: 0.2s;
+    &:hover { background: #f8f9fa; border-color: #adb5bd; }
+  }
+  .module-title { margin-bottom: 20px; color: #2c3e50; border-bottom: 2px solid #3498db; display: inline-block; padding-bottom: 5px; }
+}
+
+// TOGGLE SWITCH (CSS)
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc; transition: .4s; border-radius: 34px;
+    &:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+  }
+  input:checked + .slider { background-color: #2ecc71; }
+  input:checked + .slider:before { transform: translateX(20px); }
+}
+
+.highlight-flash {
+  animation: flash-border 2s ease-out;
+}
+
+@keyframes flash-border {
+  0% { outline: 4px solid #3498db; }
+  100% { outline: 0px solid transparent; }
 }

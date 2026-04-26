@@ -15,7 +15,7 @@ export interface Aisle {
   width: number;
   height: number;
   orientation: 'horizontal' | 'vertical';
-  rbg: RBG;
+  rbg?: RBG;
   initialX?: number; // Für Drag & Drop
   initialY?: number;
 }

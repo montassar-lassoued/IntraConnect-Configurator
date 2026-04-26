@@ -1,280 +1,520 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import { PointNode } from '../domain/point-node.model';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { RectShape } from '../domain/rectangle.model';
 import { Arrow } from '../domain/arrow.model';
 import { Aisle } from '../domain/aisle.model';
-import { RBG } from '../domain/aisle.model';
+import { Processor } from '../domain/config/processor.model';
+import { ConfigNode } from '../domain/config/module-rules.config';
+import { MODULE_CONFIG_RULES } from '../domain/config/module-rules.config';
+import { TagDefinition } from '../domain/config/module-rules.config';
+import { ModuleRule } from '../domain/config/module-rules.config';
 
-export type EditorMode = 'select' | 'draw-point' | 'draw-rect' | 'draw-arrow' | 'drag' | 'resize' | 'draw-aisle';
+
+export type EditorMode = 'select' | 'draw-rect' | 'draw-arrow'
+                         | 'draw-aisle-SRM' | 'draw-aisle'
+                         | 'draw-processor';
+
+export type ViewMode = 'processors' | 'modules' | 'visualization';
 
 @Injectable({ providedIn: 'root' })
 export class EditorStateService {
+  private view$ = new BehaviorSubject<ViewMode>('visualization');
   private mode$ = new BehaviorSubject<EditorMode>('select');
-  private points$ = new BehaviorSubject<PointNode[]>([]);
+  // Modules
+  private modules$ = new BehaviorSubject<ConfigNode[]>([]);
+  //Processors
+  private processors$ = new BehaviorSubject<Processor[]>([]);
+  // Subjects für die Daten
   private rects$ = new BehaviorSubject<RectShape[]>([]);
   private arrows$ = new BehaviorSubject<Arrow[]>([]);
   private aisles$ = new BehaviorSubject<Aisle[]>([]);
-  private rbgs$ = new BehaviorSubject<RBG[]>([]);
+  //Selected
   private selected$ = new BehaviorSubject<any[]>([]);
-  private fullXmlContent: string = '';
-  private currentFileName: string = 'SystemConfig.xml';
+  //weitere
+  public availableControllers: string[] = [];
+  private currentFileName = 'SystemConfig.xml';
+  public fullXmlContent = '';
 
-  private availableControllers: string[] = [];
-
-  /** Getter & Setter */
+  // View & Mode Getter/Setter
+  getModules$() { return this.modules$; }
+  getView$() { return this.view$.asObservable(); }
+  setView(v: ViewMode) { this.view$.next(v); }
+  getMode$() { return this.mode$.asObservable(); }
+  getMode(): EditorMode { return this.mode$.value; }
   setMode(m: EditorMode) { this.mode$.next(m); }
-  getMode() { return this.mode$.value; }
-  getPoints$() { return this.points$.asObservable(); }
+  // Daten Getter
   getRects$() { return this.rects$.asObservable(); }
   getArrows$() { return this.arrows$.asObservable(); }
   getAisles$() { return this.aisles$.asObservable(); }
-  getRbgs$() { return this.rbgs$.asObservable(); }
+  getProcessors$() { return this.processors$.asObservable(); }
   getSelected$() { return this.selected$.asObservable(); }
-  setSelected(objs: any[]) { this.selected$.next(objs); }
+  // Selektion
+  setSelected(val: any[]) { this.selected$.next(val); }
   clearSelection() { this.selected$.next([]); }
-
-  /** Daten-Updates */
-  addRect(r: RectShape) { this.rects$.next([...this.rects$.value, r]); }
-  addArrow(a: Arrow) { this.arrows$.next([...this.arrows$.value, a]); }
-  addAisle(a: Aisle) { this.aisles$.next([...this.aisles$.value, a]); }
-  updateArrows(arrows: Arrow[]) { this.arrows$.next(arrows); }
-  updateAisles(aisles: Aisle[]) { this.aisles$.next(aisles); }
-  updateRects(recs: RectShape[]) { this.rects$.next(recs); }
-
-  getAvailableControllers(): string[]{
-    return this.availableControllers;
-    }
-
-  deleteSelected() {
-    const sel = this.selected$.value;
-    this.rects$.next(this.rects$.value.filter(r => !sel.includes(r)));
-    this.arrows$.next(this.arrows$.value.filter(a => !sel.includes(a)));
-    this.aisles$.next(this.aisles$.value.filter(a => !sel.includes(a)));
+  // --- HIER SIND DIE FEHLENDEN METHODEN (FIX FÜR DEINE FEHLER) ---
+  /** Behebt TS2339: Property 'updateRects' */
+  updateRects(r: RectShape[]) {
+    this.rects$.next(r);
+  }
+  /** Behebt TS2339: Property 'updateArrows' */
+  updateArrows(a: Arrow[]) {
+    this.arrows$.next(a);
+  }
+  /** Behebt TS2339: Property 'updateAisles' */
+  updateAisles(a: Aisle[]) {
+    this.aisles$.next(a);
+  }
+  /** Behebt den Fehler in der Editor-Liste */
+  updateProcessors() {
+    this.processors$.next([...this.processors$.value]);
+  }
+  /** Behebt NG9: Property 'removeProcessor' */
+  removeProcessor(p: Processor) {
+    const updated = this.processors$.value.filter(proc => proc.id !== p.id);
+    this.processors$.next(updated);
     this.clearSelection();
   }
 
-  /** --- XML LOGIK --- */
-
-  loadConfigXml(file: File) {
-    this.currentFileName = file.name;
-    const reader = new FileReader();
-    reader.onload = (e: any) => {
-      this.fullXmlContent = e.target.result;
-      this.importFromXml(this.fullXmlContent);
+  getAvailableControllers(): string[] {
+    return this.availableControllers;
+  }
+  /** Erweitertes addProcessor für Klicks auf Canvas oder Button */
+  addProcessor(coords?: { x: number, y: number }) {
+    const newProc: Processor = {
+      id: 'P' + Date.now(),
+      name: 'New_Processor_' + (this.processors$.value.length + 1),
+      class: 'com.intra.Default',
+      x: coords?.x ?? 100,
+      y: coords?.y ?? 100
     };
-    reader.readAsText(file);
+    this.processors$.next([...this.processors$.value, newProc]);
+  }
+// Methode zum Hinzufügen eines Rechtecks
+  addRect(rect: RectShape) {
+    const newRect: RectShape = {
+      id: 'R' + Date.now(),
+      name: 'ST' + (this.rects$.value.length + 1),
+      x: rect.x,
+      y: rect.y,
+      width: 45,
+      height: 45,
+      controller: ''
+    };
+    this.rects$.next([...this.rects$.value, newRect]);
+  }
+addAisle(aisle: Aisle) {
+    this.aisles$.next([...this.aisles$.value, aisle]);
+  }
+// Methode zum Hinzufügen eines Pfeils
+addArrow(arrow: Arrow) {
+  const current = this.arrows$.value;
+  // Wir erstellen eine KOPIE des Arrays. Das ist entscheidend für Angular!
+  this.arrows$.next([...current, arrow]);
+}
+
+// --- MODUL LOGIK ---
+  /** Fügt ein Hauptmodul (Persistence, TCP, etc.) hinzu */
+  addModule(moduleName: string) {
+      const newNode: ConfigNode = {
+        id: 'M' + Date.now(),
+        tag: 'Module',
+        attributes: { name: moduleName, enabled: 'true' },
+        children: [],
+        isOpen: true
+      };
+      this.modules$.next([...this.modules$.value, newNode]);
+    }
+
+    updateModules() {
+      this.modules$.next([...this.modules$.value]);
+    }
+
+    // Hilfsmethode für das HTML (type unknown fix)
+getPossibleChildren(node: ConfigNode): string[] {
+  // 1. Finde heraus, welche Sektionen für diesen Knoten laut Regel erlaubt sind
+  let allowedSections: string[] = [];
+
+  if (node.tag === 'Module') {
+    const rule = this.getRuleForNode(node);
+    allowedSections = rule ? rule.allowedTopLevelSections : [];
+  } else {
+    const def = this.getTagDefinition(node, node.tag);
+    allowedSections = def ? def.childSections : [];
   }
 
-  private importFromXml(xmlString: string) {
-    const xmlDoc = this.stringToXml(xmlString);
+  // 2. Filter die Liste: Wenn allowMultiple false ist, darf der Tag noch nicht existieren
+  return allowedSections.filter((childTagName: string) => {
+    const childDef = this.getTagDefinition(node, childTagName);
 
-    // ---Controller einlesen ---
-      this.availableControllers = [];
-      // Wir suchen alle Connectables, die als Controller markiert sind
-      const allConnectables = xmlDoc.getElementsByTagName("Connectable");
-      for (let i = 0; i < allConnectables.length; i++) {
-        const conn = allConnectables[i] as Element;
-        const isController = conn.getAttribute("isController") === "true";
-        const name = conn.getAttribute("name");
+    // Wenn keine Definition gefunden oder Mehrfach erlaubt -> OK
+    if (!childDef || childDef.allowMultiple) return true;
 
-        if (isController && name) {
-          this.availableControllers.push(name);
+    // Wenn nur einer erlaubt -> Prüfen ob er schon in den Kindern existiert
+    const alreadyExists = node.children.some(c => c.tag === childTagName);
+    return !alreadyExists;
+  });
+}
+hasTextChildren(node: ConfigNode): boolean {
+  return node.children ? node.children.some(c => c.isTextTag) : false;
+}
+    private getActiveModuleContext(node: ConfigNode): string {
+      // Durchsuche die Regeln nach dem Tag
+      return Object.keys(MODULE_CONFIG_RULES).find(key =>
+        MODULE_CONFIG_RULES[key].definitions[node.tag]
+      ) || '';
+    }
+
+    addChildFromSchema(parent: ConfigNode, tagName: string) {
+
+      const possible = this.getPossibleChildren(parent);
+
+        if (!possible.includes(tagName)) {
+          console.warn(`Tag ${tagName} ist hier nicht (mehr) erlaubt!`);
+          return;
         }
-      }
-    // --- VISU ---
-    const visuTag = xmlDoc.getElementsByTagName("Visu")[0];
+      const context = this.getActiveModuleContext(parent) || parent.attributes['name'];
+      const definition = MODULE_CONFIG_RULES[context]?.definitions[tagName];
 
-    if (!visuTag) return;
+      const newNode: ConfigNode = {
+        id: 'ID' + Math.random(),
+        tag: tagName,
+        attributes: {},
+        children: [],
+        isOpen: true
+      };
 
-    const rects: RectShape[] = [];
-    const rectElements = visuTag.getElementsByTagName("Rect");
-    for (let i = 0; i < rectElements.length; i++) {
-      const el = rectElements[i] as Element;
-      rects.push({
-        id: el.getAttribute("id") || '',
-        name: el.getAttribute("name") || '',
-        x: Number(el.getAttribute("x")),
-        y: Number(el.getAttribute("y")),
-        width: Number(el.getAttribute("width")),
-        height: Number(el.getAttribute("height")),
-        controller: el.getAttribute("controller") || ''
-      } as RectShape);
-    }
-
-    const arrows: Arrow[] = [];
-    const arrowElements = visuTag.getElementsByTagName("Arrow");
-    for (let i = 0; i < arrowElements.length; i++) {
-      const el = arrowElements[i] as Element;
-      const wpAttr = el.getAttribute("waypoints");
-      const waypoints = wpAttr ? wpAttr.split(';').filter(s => s).map(p => {
-        const c = p.split(',');
-        return { x: Number(c[0]), y: Number(c[1]) };
-      }) : [];
-
-      arrows.push({
-        id: el.getAttribute("id") || '',
-        fromRectId: el.getAttribute("from") || '',
-        fromSide: el.getAttribute("fromSide") as any,
-        toRectId: el.getAttribute("to") || '',
-        toSide: el.getAttribute("toSide") as any,
-        type: el.getAttribute("type") as any,
-        speed: Number(el.getAttribute("speed") || 5),
-        direction: el.getAttribute("direction") as any || 'S',
-        cost: Number(el.getAttribute("cost") || 100),
-        waypoints: waypoints
-      } as Arrow);
-    }
-
-    // --- GASSEN EINLESEN ---
-      const aisles: Aisle[] = [];
-      const aisleElements = visuTag.getElementsByTagName("Aisle");
-
-      for (let i = 0; i < aisleElements.length; i++) {
-        const el = aisleElements[i] as Element;
-        const rbgEl = el.getElementsByTagName("RBG")[0];
-
-        const aisleObj: Aisle = {
-          id: el.getAttribute("id") || 'G' + Date.now() + i,
-          name: el.getAttribute("name") || '',
-          x: Number(el.getAttribute("x")),
-          y: Number(el.getAttribute("y")),
-          width: Number(el.getAttribute("width")),
-          height: Number(el.getAttribute("height")),
-          orientation: (el.getAttribute("orientation") as any) || 'horizontal',
-          rbg: {
-            id: rbgEl?.getAttribute("id") || 'RBG' + Date.now(),
-            name: rbgEl?.getAttribute("name") || 'RBG',
-            controller: rbgEl?.getAttribute("controller") || 'RBG',
-            positionOffset: Number(rbgEl?.getAttribute("positionOffset") || 0.5),
-            width: Number(rbgEl?.getAttribute("width") || 20),
-            height: Number(rbgEl?.getAttribute("height") || 30)
-          }
-        };
-        aisles.push(aisleObj);
+      if (definition?.attributes) {
+        definition.attributes.forEach(a => newNode.attributes[a] = '');
       }
 
-    this.updateRects(rects);
-    this.updateArrows(arrows);
-    this.updateAisles(aisles);
+      // TextTags (wie Username) als Kinder mit Flag anlegen
+      if (definition?.textTags) {
+        definition.textTags.forEach(t => {
+          newNode.children.push({
+            id: 'T' + Math.random(),
+            tag: t,
+            attributes: {},
+            children: [],
+            textContent: '',
+            isTextTag: true
+          });
+        });
+      }
+
+      parent.children.push(newNode);
+      this.updateModules();
+    }
+
+    removeModule(mod: ConfigNode) {
+      this.modules$.next(this.modules$.value.filter(m => m !== mod));
+    }
+
+/** Entfernt einen Knoten aus einer Liste (z.B. eine Database aus einem Modul) */
+removeNode(list: ConfigNode[], node: ConfigNode) {
+  const index = list.indexOf(node);
+  if (index > -1) {
+    list.splice(index, 1);
+    this.updateModules();
+  }
+}
+
+private getRuleForNode(node: ConfigNode): ModuleRule | null {
+  // Wenn der Knoten ein Modul ist, nimm den Namen aus den Attributen (z.B. "Persistence")
+  if (node.tag === 'Module') {
+    const modName = node.attributes['name'];
+    return MODULE_CONFIG_RULES[modName] || null;
   }
 
-  saveToXml() {
-    if (!this.fullXmlContent) return;
+  // Ansonsten suchen wir in allen Modulen nach der Definition für diesen Tag
+  for (const mod in MODULE_CONFIG_RULES) {
+    const rule = MODULE_CONFIG_RULES[mod];
+    if (rule.definitions[node.tag]) {
+      return rule;
+    }
+  }
+  return null;
+}
 
-    const xmlDoc = this.stringToXml(this.fullXmlContent);
+private getTagDefinition(node: ConfigNode, tagName: string): TagDefinition | null {
+  const rule = this.getRuleForNode(node);
+  return rule ? rule.definitions[tagName] : null;
+}
 
-    // --- TEIL 1: VISU AKTUALISIEREN ---
-    const allModules = Array.from(xmlDoc.getElementsByTagName("Module")) as Element[];
-    let uiModule = allModules.find(m => m.getAttribute("name") === "UI");
+deleteSelected() {
+  const selectedIds = this.selected$.value.map(s => s.id);
 
-    if (uiModule) {
-      const oldVisu = uiModule.getElementsByTagName("Visu")[0];
-      if (oldVisu) uiModule.removeChild(oldVisu);
+  this.rects$.next(this.rects$.value.filter(r => !selectedIds.includes(r.id)));
+  this.arrows$.next(this.arrows$.value.filter(a =>
+    !selectedIds.includes(a.id) &&
+    !selectedIds.includes(a.fromRectId) &&
+    !selectedIds.includes(a.toRectId)
+  ));
+  this.aisles$.next(this.aisles$.value.filter(a => !selectedIds.includes(a.id)));
+  this.processors$.next(this.processors$.value.filter(p => !selectedIds.includes(p.id)));
 
-      const visuEl = xmlDoc.createElement("Visu");
-      const rectsWrapper = xmlDoc.createElement("Rects");
-      this.rects$.value.forEach(r => {
-        const rEl = xmlDoc.createElement("Rect");
-        rEl.setAttribute("id", r.id);
-        rEl.setAttribute("name", r.name || "");
-        rEl.setAttribute("x", Math.round(r.x).toString());
-        rEl.setAttribute("y", Math.round(r.y).toString());
-        rEl.setAttribute("width", Math.round(r.width).toString());
-        rEl.setAttribute("height", Math.round(r.height).toString());
-        rEl.setAttribute("controller", r.controller || "");
-        rectsWrapper.appendChild(rEl);
-      });
-      visuEl.appendChild(rectsWrapper);
+  this.clearSelection();
+}
 
-      const arrowsWrapper = xmlDoc.createElement("Arrows");
-      this.arrows$.value.forEach(a => {
-        const fEl = xmlDoc.createElement("Arrow");
-        fEl.setAttribute("id", a.id);
-        fEl.setAttribute("from", a.fromRectId);
-        fEl.setAttribute("fromSide", a.fromSide || "");
-        fEl.setAttribute("to", a.toRectId);
-        fEl.setAttribute("toSide", a.toSide || "");
-        fEl.setAttribute("type", a.type);
-        fEl.setAttribute("direction", a.direction || "S");
-        fEl.setAttribute("speed", (a.speed || 0).toString());
-        fEl.setAttribute("cost", (a.cost || 0).toString());
-        fEl.setAttribute("waypoints", a.waypoints?.map(w => `${Math.round(w.x)},${Math.round(w.y)}`).join(';') || "");
-        arrowsWrapper.appendChild(fEl);
-      });
-      visuEl.appendChild(arrowsWrapper);
-      // Gassen
-      const aislesWrapper = xmlDoc.createElement("Aisles");
-          this.aisles$.value.forEach(a => {
-            const aEl = xmlDoc.createElement("Aisle");
-            aEl.setAttribute("id", a.id);
-            aEl.setAttribute("name", a.name);
-            aEl.setAttribute("x", Math.round(a.x).toString());
-            aEl.setAttribute("y", Math.round(a.y).toString());
-            aEl.setAttribute("width", Math.round(a.width).toString());
-            aEl.setAttribute("height", Math.round(a.height).toString());
-            aEl.setAttribute("orientation", a.orientation);
+/******Speichern und Auslesen********* */
+// --- IMPORT ---
+    loadConfigXml(file: File) {
+      this.currentFileName = file.name;
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.fullXmlContent = e.target.result;
+        this.importFromXml(this.fullXmlContent);
+      };
+      reader.readAsText(file);
+    }
+  private importFromXml(xmlString: string) {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xmlString, "text/xml");
 
-            if (a.rbg) {
-              const srEl = xmlDoc.createElement("RBG");
-              srEl.setAttribute("id", a.rbg.id);
-              srEl.setAttribute("name", a.rbg.name);
-              srEl.setAttribute("positionOffset", a.rbg.positionOffset.toString());
-              srEl.setAttribute("width", a.rbg.width.toString());
-              srEl.setAttribute("height", a.rbg.height.toString());
-              aEl.appendChild(srEl);
-            }
-            aislesWrapper.appendChild(aEl);
+      // 1. ALTE DATEN LÖSCHEN (Reset)
+          this.modules$.next([]);       // XML-Module leeren
+          this.rects$.next([]);         // Prozessoren (Rechtecke) leeren
+          this.arrows$.next([]);        // Pfeile leeren
+          this.aisles$.next([]);        // Gassen leeren
+          this.selected$.next([]);      // Auswahl aufheben
+          this.processors$.next([]); // Prozessoren leeren
+          this.availableControllers = [];
+
+      // 2. PROZESSOREN EINLESEN
+        const processorsWrapper = xmlDoc.getElementsByTagName("Processors")[0];
+        if (processorsWrapper) {
+          const procElements = Array.from(processorsWrapper.getElementsByTagName("Processor"));
+          const loadedProcessors: Processor[] = procElements.map(el => ({
+            id: 'P' + Math.random().toString(36).substr(2, 9), // Neue ID generieren
+            name: el.getAttribute("name") || 'Unnamed Processor',
+            class: el.getAttribute("class") || '',
+            // Falls du X/Y Koordinaten im XML hast, hier auslesen:
+            x: Number(el.getAttribute("x")) || 100,
+            y: Number(el.getAttribute("y")) || 100
+          }));
+          this.processors$.next(loadedProcessors);
+        }
+
+        // 3. CONTROLLER SCAN (Zuerst, damit Dropdowns Daten haben)
+        this.scanControllers(xmlDoc);
+      // 1. Module einlesen (Rekursiv für den Baum-Editor)
+      const modulesContainer = xmlDoc.getElementsByTagName("Modules")[0];
+      if (modulesContainer) {
+        const moduleElements = Array.from(modulesContainer.children).filter(el => el.tagName === 'Module');
+        const nodes = moduleElements.map(modEl => this.xmlToConfigNode(modEl as Element));
+        this.modules$.next(nodes);
+      }
+
+      // 2. Visu-Daten extrahieren (Speziell für das UI-Modul)
+      const allVisus = Array.from(xmlDoc.getElementsByTagName("Visu"));
+      const allRects: RectShape[] = [];
+      const allArrows: Arrow[] = [];
+
+      allVisus.forEach(visu => {
+        // Rects
+        const rectEls = visu.getElementsByTagName("Rect");
+        Array.from(rectEls).forEach(el => {
+          allRects.push({
+            id: el.getAttribute("id") || '',
+            name: el.getAttribute("name") || '',
+            x: Number(el.getAttribute("x")),
+            y: Number(el.getAttribute("y")),
+            width: Number(el.getAttribute("width")),
+            height: Number(el.getAttribute("height")),
+            controller: el.getAttribute("controller") || ''
           });
-          visuEl.appendChild(aislesWrapper);
-
-      uiModule.appendChild(visuEl);
-    }
-
-    // --- TEIL 2: STOCKMOVEMENT (NODES) AKTUALISIEREN ---
-    let stockModule = allModules.find(m => m.getAttribute("name") === "StockMovement");
-
-    if (stockModule) {
-      const oldNodes = stockModule.getElementsByTagName("Nodes")[0];
-      if (oldNodes) stockModule.removeChild(oldNodes);
-
-      const nodesEl = xmlDoc.createElement("Nodes");
-      const rects = this.rects$.value;
-      const arrows = this.arrows$.value;
-
-      rects.forEach(r => {
-        const nodeEl = xmlDoc.createElement("Node");
-        nodeEl.setAttribute("point", r.name || "");
-        nodeEl.setAttribute("controller", r.controller || "");
-
-        arrows.filter(a => a.fromRectId === r.id).forEach(a => {
-          const targetRect = rects.find(target => target.id === a.toRectId);
-          const targetEl = xmlDoc.createElement("Target");
-          targetEl.setAttribute("point", targetRect?.name || "");
-          targetEl.setAttribute("direction", a.direction || "S");
-          targetEl.setAttribute("cost", (a.cost || 100).toString());
-          nodeEl.appendChild(targetEl);
         });
-        nodesEl.appendChild(nodeEl);
+
+        // Arrows
+        const arrowEls = visu.getElementsByTagName("Arrow");
+        Array.from(arrowEls).forEach(el => {
+          const wpAttr = el.getAttribute("waypoints");
+          allArrows.push({
+            id: el.getAttribute("id") || '',
+            fromRectId: el.getAttribute("from") || '',
+            fromSide: el.getAttribute("fromSide") as any,
+            toRectId: el.getAttribute("to") || '',
+            toSide: el.getAttribute("toSide") as any,
+            type: el.getAttribute("type") as any,
+            speed: Number(el.getAttribute("speed") || 5),
+            direction: el.getAttribute("direction") as any,
+            cost: Number(el.getAttribute("cost") || 100),
+            waypoints: wpAttr ? wpAttr.split(';').filter(s => s).map(p => {
+              const c = p.split(',');
+              return { x: Number(c[0]), y: Number(c[1]) };
+            }) : []
+          });
+        });
       });
-      stockModule.appendChild(nodesEl);
+
+      this.rects$.next(allRects);
+      this.arrows$.next(allArrows);
+      this.scanControllers(xmlDoc);
     }
 
-    const finalXml = this.xmlToString(xmlDoc);
+// --- EXPORT ---
+  saveToXml() {
+    const xmlDoc = document.implementation.createDocument(null, "SystemConfig");
+    const root = xmlDoc.documentElement;
+    //Prozessoren generieren
+    const procWrapper = xmlDoc.createElement("Processors");
+    this.processors$.value.forEach(proc => {
+      const p = xmlDoc.createElement("Processor");
+      p.setAttribute("name", proc.name);
+      p.setAttribute("class", proc.class);
+      procWrapper.appendChild(p);
+    });
+    root.appendChild(procWrapper);
+
+    // 2. Module generieren
+    const modulesWrapper = xmlDoc.createElement("Modules");
+    this.modules$.value.forEach(modNode => {
+      const modEl = this.configNodeToXml(xmlDoc, modNode);
+
+      // Falls es das UI Modul ist, injizieren wir die aktuelle Visu
+      if (modNode.attributes['name'] === 'UI') {
+        this.injectVisu(xmlDoc, modEl);
+      }
+      // Falls es StockMovement ist, injizieren wir die Nodes
+      if (modNode.attributes['name'] === 'StockMovement') {
+        this.injectStockNodes(xmlDoc, modEl);
+      }
+
+      modulesWrapper.appendChild(modEl);
+    });
+    root.appendChild(modulesWrapper);
+
+    const finalXml = '<?xml version="1.0" encoding="UTF-8"?>\n' + this.xmlToString(xmlDoc);
     this.downloadFile(finalXml, this.currentFileName, 'application/xml');
   }
 
-  /** Hilfsmethoden für XML-Konvertierung */
-  private stringToXml(xmlString: string): Document {
-    const parser = new DOMParser();
-    return parser.parseFromString(xmlString, "text/xml");
+  // --- REKURSIVE WANDLER ---
+  private xmlToConfigNode(el: Element): ConfigNode {
+    const node: ConfigNode = {
+      id: crypto.randomUUID(),
+      tag: el.tagName,
+      attributes: {},
+      children: [],
+      textContent: '',
+      isTextTag: false
+    };
+
+    Array.from(el.attributes).forEach(a => node.attributes[a.name] = a.value);
+
+    // Spezialbehandlung: Wenn das Element nur Text hat (z.B. <Host>localhost</Host>)
+    if (el.children.length === 0 && el.textContent?.trim()) {
+       node.textContent = el.textContent;
+       node.isTextTag = true;
+    } else {
+      Array.from(el.children).forEach(child => {
+        // Visu und Nodes im Baum überspringen, da wir sie separat managen
+        if (child.tagName !== 'Visualization' && child.tagName !== 'Nodes') {
+          node.children.push(this.xmlToConfigNode(child));
+        }
+      });
+    }
+    return node;
+  }
+
+ private configNodeToXml(doc: Document, node: ConfigNode): Element {
+   const el = doc.createElement(node.tag);
+   Object.keys(node.attributes).forEach(k => el.setAttribute(k, node.attributes[k]));
+
+   if (node.isTextTag) {
+     // Falls node.textContent undefined ist, weise null zu (textContent akzeptiert null)
+     el.textContent = node.textContent || null;
+   } else {
+     node.children.forEach(c => el.appendChild(this.configNodeToXml(doc, c)));
+   }
+   return el;
+ }
+
+  // --- INJEKTOREN ---
+  private injectVisu(doc: Document, uiModule: Element) {
+    let visWrapper = uiModule.getElementsByTagName("Visualization")[0];
+    if (!visWrapper) {
+      visWrapper = doc.createElement("Visualization");
+      uiModule.appendChild(visWrapper);
+    }
+
+    const visuEl = doc.createElement("Visu");
+    visuEl.setAttribute("id", "visualization_1");
+
+    const rs = doc.createElement("Rects");
+    this.rects$.value.forEach(r => {
+      const re = doc.createElement("Rect");
+      re.setAttribute("id", r.id || '');
+      re.setAttribute("name", r.name || '');
+      re.setAttribute("x", Math.round(r.x || 0).toString());
+      re.setAttribute("y", Math.round(r.y || 0).toString());
+      re.setAttribute("width", (r.width || 0).toString());
+      re.setAttribute("height", (r.height || 0).toString());
+      re.setAttribute("controller", r.controller || '');
+      rs.appendChild(re);
+    });
+    visuEl.appendChild(rs);
+
+    const ars = doc.createElement("Arrows");
+    this.arrows$.value.forEach(a => {
+      const ae = doc.createElement("Arrow");
+      ae.setAttribute("id", a.id || '');
+      ae.setAttribute("from", a.fromRectId || '');
+      ae.setAttribute("to", a.toRectId || '');
+      ae.setAttribute("fromSide", a.fromSide || '');
+      ae.setAttribute("toSide", a.toSide || '');
+      ae.setAttribute("type", a.type || '');
+      ae.setAttribute("direction", a.direction || '');
+      ae.setAttribute("speed", (a.speed ?? 5).toString());
+      ae.setAttribute("cost", (a.cost ?? 100).toString());
+
+      const wpStr = (a.waypoints || [])
+        .map(w => `${Math.round(w.x || 0)},${Math.round(w.y || 0)}`)
+        .join(';');
+      ae.setAttribute("waypoints", wpStr);
+
+      ars.appendChild(ae);
+    });
+    visuEl.appendChild(ars);
+    visWrapper.appendChild(visuEl);
+  }
+
+  private injectStockNodes(doc: Document, stockModule: Element) {
+    const nodesWrapper = doc.createElement("Nodes");
+
+    this.rects$.value.forEach(r => {
+      const nodeEl = doc.createElement("Node");
+      nodeEl.setAttribute("point", r.name || '');
+      nodeEl.setAttribute("controller", r.controller || '');
+
+      // Targets basierend auf den Pfeilen finden
+      this.arrows$.value
+        .filter(a => a.fromRectId === r.id)
+        .forEach(a => {
+          const targetRect = this.rects$.value.find(tr => tr.id === a.toRectId);
+          const targetEl = doc.createElement("Target");
+
+          targetEl.setAttribute("point", targetRect?.name || "");
+          targetEl.setAttribute("direction", a.direction || "");
+          targetEl.setAttribute("cost", (a.cost ?? 100).toString());
+
+          nodeEl.appendChild(targetEl);
+        });
+
+      nodesWrapper.appendChild(nodeEl);
+    });
+
+    // Einfügen am Anfang des Moduls
+    stockModule.insertBefore(nodesWrapper, stockModule.firstChild);
+  }
+
+  // --- HELPERS ---
+  private scanControllers(xmlDoc: Document) {
+    const conns = xmlDoc.getElementsByTagName("Connectable");
+    this.availableControllers = Array.from(conns).map(c => c.getAttribute("name") || '').filter(n => n);
   }
 
   private xmlToString(xmlDoc: Document): string {
     const serializer = new XMLSerializer();
-    const xmlString = serializer.serializeToString(xmlDoc);
-    // Erzeugt Zeilenumbrüche für bessere Lesbarkeit
-    return xmlString.replace(/>\s*</g, '>\n<');
+    return serializer.serializeToString(xmlDoc).replace(/>\s*</g, '>\n<');
   }
 
   private downloadFile(content: string, fileName: string, type: string) {
@@ -284,6 +524,5 @@ export class EditorStateService {
     a.href = url;
     a.download = fileName;
     a.click();
-    URL.revokeObjectURL(url);
   }
 }

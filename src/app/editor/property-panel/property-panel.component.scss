@@ -1,10 +1,125 @@
+.sidebar-right {
+  width: 300px; // Etwas breiter für komfortable Inputs
+  background: #ffffff;
+  border-left: 1px solid #dee2e6;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.05);
+  height: 100%;
+}
+
 .property-panel {
   display: flex;
-  flex-direction: column; /* alles untereinander */
-  padding: 10px;
-  width: 200px; /* feste Breite für Panel */
-  box-sizing: border-box;
-  background-color: #f5f5f5;
+  flex-direction: column;
+  height: 100%;
+animation: fadeIn 0.3s ease-out;
+  h3 {
+    margin: 0;
+    padding: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    border-bottom: 1px solid #eee;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &::before {
+      content: '📝'; // Ein kleines Icon vor der Überschrift
+      font-size: 18px;
+    }
+  }
+
+  .obj-properties {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+
+    // Karte für jedes ausgewählte Objekt
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #f0f0f0;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .sub-title {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+        color: #3498db;
+        border-left: 3px solid #3498db;
+        padding-left: 8px;
+      }
+
+      label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #95a5a6;
+        margin-bottom: -8px; // Zieht das Label näher an den Input
+      }
+
+      input[type="text"],
+      input[type="number"],
+      select {
+        padding: 10px 12px;
+        border: 1px solid #dcdde1;
+        border-radius: 6px;
+        font-size: 13px;
+        background: #fff;
+        transition: all 0.2s ease;
+        color: #2c3e50;
+
+        &:focus {
+          outline: none;
+          border-color: #3498db;
+          box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        &:hover {
+          border-color: #bdc3c7;
+        }
+      }
+
+      // Spezielles Styling für Select-Boxen
+      select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 14px;
+        padding-right: 35px;
+      }
+    }
+  }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+// Wenn nichts ausgewählt ist
+.no-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #bdc3c7;
+  padding: 40px;
+  text-align: center;
+
+  .icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+    opacity: 0.5;
+  }
 }
 
 .obj-properties {
