@@ -1,5 +1,197 @@
-<div class="layout">
-  <app-toolbar></app-toolbar>
-  <app-svg-canvas></app-svg-canvas>
-  <app-property-panel [selected]="selected$ | async"></app-property-panel>
+<div class="app-container">
+  <aside class="sidebar-left">
+    <div class="file-management">
+      <input type="file" #fileInput style="display: none" (change)="onFileSelected($event)" accept=".xml">
+
+      <div class="nav-item action" (click)="fileInput.click()">
+        <span class="icon">📂</span> Import XML
+      </div>
+
+      <div class="nav-item action"
+           [class.disabled]="!editor.fullXmlContent"
+           (click)="editor.fullXmlContent ? editor.saveToXml() : null">
+        <span class="icon">💾</span> Export XML
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+    <div class="nav-item" (click)="editor.setView('visualization')" [class.active]="(view$ | async) === 'visualization'">
+      <span class="icon">🖼️</span> Visu
+    </div>
+    <div class="nav-item" (click)="editor.setView('processors')" [class.active]="(view$ | async) === 'processors'">
+      <span class="icon">⚙️</span> Processors
+    </div>
+    <div class="nav-item" (click)="showAllModules()" [class.active]="(view$ | async) === 'modules' && !activeModuleId">
+      <span class="icon">📦</span> Modules
+    </div>
+
+    <div class="sub-nav-list">
+      <div *ngFor="let modName of moduleTypeKeys"
+           class="sub-nav-item"
+           [class.exists]="checkModuleExists(modName)"
+           [class.active-sub]="activeModuleId && checkModuleExists(modName)"
+           (click)="handleModuleClick(modName)">
+        <span class="status-indicator"></span>
+        <span class="mod-name">{{ modName }}</span>
+        <span class="add-icon" *ngIf="!checkModuleExists(modName)">+</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="top-toolbar">
+      <ng-container [ngSwitch]="view$ | async">
+        <div *ngSwitchCase="'visualization'" class="tool-group">
+          <button (click)="editor.setMode('select')" [class.active]="(mode$ | async) === 'select'">🖱️ Select</button>
+          <button (click)="editor.setMode('draw-rect')" [class.active]="(mode$ | async) === 'draw-rect'">⬛ Place</button>
+          <button (click)="editor.setMode('draw-arrow')" [class.active]="(mode$ | async) === 'draw-arrow'">➡️ Path</button>
+          <button (click)="editor.setMode('draw-aisle-SRM')" [class.active]="(mode$ | async) === 'draw-aisle-SRM'">🛤️ Aisle + SRM</button>
+          <button (click)="editor.setMode('draw-aisle')" [class.active]="(mode$ | async) === 'draw-aisle'">🪜 Aisle </button>
+        </div>
+        <div *ngSwitchCase="'processors'" class="tool-group">
+          <button class="btn-primary" (click)="editor.addProcessor()">+ New Processor</button>
+        </div>
+        <div *ngSwitchCase="'modules'" class="tool-group">
+        </div>
+      </ng-container>
+    </header>
+
+    <div class="content-body">
+      <main class="editor-area">
+        <ng-container [ngSwitch]="view$ | async">
+          <app-svg-canvas *ngSwitchCase="'visualization'"></app-svg-canvas>
+
+          <div *ngSwitchCase="'processors'" class="list-editor">
+            <div *ngFor="let p of (processors$ | async)"
+                 class="p-card"
+                 (click)="editor.setSelected([p])"
+                 [class.selected]="(selected$ | async)?.includes(p)">
+
+              <div class="card-inputs">
+                <label>Processor Name</label>
+                <input [(ngModel)]="p.name"
+                       (ngModelChange)="editor.updateProcessors()"
+                       placeholder="z.B. DataHandler"
+                       (keydown)="$event.stopPropagation()">
+
+                <label>Logic Class Path</label>
+                <input [(ngModel)]="p.class"
+                       (ngModelChange)="editor.updateProcessors()"
+                       placeholder="com.intra.MyProcessor"
+                       (keydown)="$event.stopPropagation()">
+              </div>
+
+              <button (click)="editor.removeProcessor(p); $event.stopPropagation()" class="btn-icon">
+                🗑️ Remove
+              </button>
+            </div>
+          </div>
+
+          <div *ngSwitchCase="'modules'" class="module-editor-container">
+
+            <div *ngIf="!activeModuleId" class="modules-overview-grid">
+              <div *ngFor="let mod of (editor.getModules$() | async)" class="module-summary-card">
+                <div class="info">
+                  <span class="type">{{ mod.attributes['name'] }}</span>
+                  <div class="enabled-toggle">
+                    <label class="switch">
+                      <input type="checkbox"
+                             [ngModel]="mod.attributes['enabled'] === 'true'"
+                             (ngModelChange)="mod.attributes['enabled'] = $event ? 'true' : 'false'; editor.updateModules()">
+                      <span class="slider round"></span>
+                    </label>
+                    <span>{{ mod.attributes['enabled'] === 'true' ? 'Enabled' : 'Disabled' }}</span>
+                  </div>
+                </div>
+                <div class="actions">
+                  <button (click)="activeModuleId = mod.id" class="btn-edit">⚙️ Edit Config</button>
+                  <button (click)="editor.removeModule(mod)" class="btn-delete">🗑️</button>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="activeModuleId" class="single-module-editor">
+              <button class="btn-back" (click)="activeModuleId = null">⬅️ Back to Overview</button>
+
+              <div *ngFor="let mod of (editor.getModules$() | async)">
+                <div *ngIf="mod.id === activeModuleId" class="module-focus-area">
+
+                  <div *ngFor="let child of mod.children" class="tag-block">
+                    <ng-container *ngTemplateOutlet="nodeTemplate; context:{ $implicit: child, parentArray: mod.children }"></ng-container>
+                  </div>
+
+                  <div class="module-actions">
+                    <button *ngFor="let topTag of editor.getPossibleChildren(mod)"
+                            (click)="editor.addChildFromSchema(mod, topTag)" class="btn-add-main">
+                      + Add {{ topTag }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <ng-template #nodeTemplate let-node let-parentArray="parentArray">
+                <div class="tag-block" [class.nested]="!node.isTextTag">
+
+                  <div class="tag-header">
+                    <div class="tag-label">
+                      <span class="tag-bracket"></span>
+                      <span class="tag-name">{{ node.tag }}</span>
+                      <span class="tag-bracket"></span>
+                    </div>
+                    <button (click)="editor.removeNode(parentArray, node)" class="btn-minimal" title="Löschen">×</button>
+                  </div>
+
+                  <div class="tag-content">
+
+                    <div class="attribute-grid" *ngIf="(node.attributes | keyvalue).length > 0">
+                      <div *ngFor="let attr of node.attributes | keyvalue; trackBy: trackByKey" class="input-field">
+                        <label>{{ attr.key }}</label>
+                        <input [(ngModel)]="$any(node.attributes)[$any(attr.key)]"
+                               (ngModelChange)="editor.updateModules()"
+                               [ngModelOptions]="{ updateOn: 'blur' }">
+                      </div>
+                    </div>
+
+                    <div class="text-tag-area" *ngIf="editor.hasTextChildren(node)">
+                      <ng-container *ngFor="let sub of node.children">
+                        <div *ngIf="sub.isTextTag" class="text-input-field">
+                          <label>{{ sub.tag }}</label>
+                          <input [(ngModel)]="sub.textContent" (ngModelChange)="editor.updateModules()">
+                        </div>
+                      </ng-container>
+                    </div>
+
+                    <div class="nested-children-area">
+                      <ng-container *ngFor="let nested of node.children">
+                        <div *ngIf="!nested.isTextTag">
+                          <ng-container *ngTemplateOutlet="nodeTemplate; context:{ $implicit: nested, parentArray: node.children }"></ng-container>
+                        </div>
+                      </ng-container>
+                    </div>
+
+                    <div class="tag-footer-actions" *ngIf="!node.isTextTag">
+                      <button *ngFor="let nextTag of editor.getPossibleChildren(node)"
+                              (click)="editor.addChildFromSchema(node, nextTag)" class="btn-add-sub">
+                        + {{ nextTag }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="tag-header footer-tag" *ngIf="!node.isTextTag">
+                    <span class="tag-bracket"></span>
+                    <span class="tag-name">{{ node.tag }}</span>
+                    <span class="tag-bracket"></span>
+                  </div>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </ng-container>
+      </main>
+      <app-property-panel
+        *ngIf="(view$ | async) === 'visualization'"
+        class="sidebar-right"
+        [selected]="(selected$ | async) ?? []">
+      </app-property-panel>
+    </div>
+  </div>
 </div>

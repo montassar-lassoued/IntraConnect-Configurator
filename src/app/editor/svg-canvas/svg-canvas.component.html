@@ -9,7 +9,40 @@
     </marker>
   </defs>
 
-  <g *ngFor="let a of arrows; trackBy: trackById">
+  <g *ngIf="currentView === 'visualization'">
+  <g *ngFor="let aisle of (editor.getAisles$() | async); trackBy: trackById">
+    <rect class="aisle-track"
+          [attr.x]="aisle.x" [attr.y]="aisle.y"
+          [attr.width]="aisle.width" [attr.height]="aisle.height"
+          [class.selected]="isSelected(aisle)"
+          (mousedown)="startDrag($event, aisle)">
+    </rect>
+    <rect *ngIf="aisle.rbg"
+          class="rbg-unit"
+          [attr.x]="aisle.x + (aisle.width * aisle.rbg.positionOffset) - (aisle.rbg.width / 2)"
+          [attr.y]="aisle.y + (aisle.height / 2) - (aisle.rbg.height / 2)"
+          [attr.width]="aisle.rbg.width" [attr.height]="aisle.rbg.height">
+    </rect>
+    <rect *ngIf="isSelected(aisle)"
+          [attr.x]="aisle.x + aisle.width - 8"
+          [attr.y]="aisle.y + aisle.height - 8"
+          width="16" height="16"
+          fill="blue"
+          style="cursor: nwse-resize"
+          (mousedown)="$event.stopPropagation(); startResize($event, aisle)">
+    </rect>
+  </g>
+
+  <line *ngIf="arrowStartPoint"
+        [attr.x1]="arrowStartPoint.x" [attr.y1]="arrowStartPoint.y"
+        [attr.x2]="currentMousePos.x" [attr.y2]="currentMousePos.y"
+        stroke="orange"
+        stroke-dasharray="5,5"
+        stroke-width="2"
+        style="pointer-events: none;">
+  </line>
+
+  <g *ngFor="let a of (editor.getArrows$() | async); trackBy: trackById">
     <path [attr.d]="getArrowPath(a)"
           stroke="transparent"
           stroke-width="30"
@@ -22,22 +55,22 @@
     <path [attr.d]="getArrowPath(a)"
           class="conveyor-base"
           stroke="#222"
-          stroke-width="20px"
+          stroke-width="20"
           fill="none">
     </path>
 
     <path [attr.d]="getArrowPath(a)"
           [class]="'conveyor type-' + a.type"
-          [class.selected]="selected.includes(a)">
+          [class.selected]="isSelected(a)">
     </path>
 
     <path *ngIf="a.speed > 0"
           [attr.d]="getArrowPath(a)"
-          class="flow-line direction-' + a.direction"
+          [class]="'flow-line direction-' + a.direction"
           [style.animation-duration]="(2 / a.speed) + 's'">
     </path>
 
-    <ng-container *ngIf="selected.includes(a)">
+    <ng-container *ngIf="isSelected(a)">
       <circle *ngFor="let wp of a.waypoints; let i = index"
               [attr.cx]="wp.x" [attr.cy]="wp.y" r="6"
               fill="white" stroke="blue" stroke-width="2"
@@ -47,70 +80,52 @@
     </ng-container>
   </g>
 
-  <g *ngFor="let r of rects; trackBy: trackById">
+  <g *ngFor="let r of (editor.getRects$() | async); trackBy: trackById">
     <rect [attr.x]="r.x" [attr.y]="r.y"
           [attr.width]="r.width" [attr.height]="r.height"
-          [class.selected]="selected.includes(r)"
+          [class.selected]="isSelected(r)"
           fill="white" stroke="blue" stroke-width="2"
-          (mousedown)="startDrag($event, r)"
+          (mousedown)="startDrag($event, r); $event.stopPropagation()"
           (mouseenter)="hoveredRect = r"
           (mouseleave)="hoveredRect = null">
     </rect>
 
-    <ng-container *ngIf="hoveredRect === r || arrowStartPoint">
-      <circle *ngFor="let p of getConnectors(r)"
-              [attr.cx]="p.x" [attr.cy]="p.y" r="5"
-              fill="orange" class="connector"
-              (mousedown)="onConnectorClick($event, p, r)">
-      </circle>
-    </ng-container>
-
-    <rect *ngIf="selected.includes(r)"
-          [attr.x]="r.x + r.width - 6" [attr.y]="r.y + r.height - 6"
-          width="12" height="12" fill="blue" style="cursor: nwse-resize"
-          (mousedown)="$event.stopPropagation(); resizeTarget = r">
-    </rect>
     <text [attr.x]="r.x + r.width / 2"
           [attr.y]="r.y + r.height / 2"
           dominant-baseline="central"
           text-anchor="middle"
           pointer-events="none"
-          style="font-family: Arial; font-size: 12px; fill: #333;">
+          style="font-family: Arial; font-size: 12px; fill: #333; user-select: none;">
       {{ r.name }}
     </text>
-  </g>
-  <g *ngFor="let aisle of aisles; trackBy: trackById">
 
-    <rect [attr.x]="aisle.x"
-          [attr.y]="aisle.y"
-          [attr.width]="aisle.width"
-          [attr.height]="aisle.height"
-          class="aisle-track"
-          [class.selected]="selected.includes(aisle)"
-          (mousedown)="startDrag($event, aisle)">
+    <rect *ngIf="isSelected(r)"
+          [attr.x]="r.x + r.width - 6" [attr.y]="r.y + r.height - 6"
+          width="12" height="12" fill="blue" style="cursor: nwse-resize"
+          (mousedown)="$event.stopPropagation(); startResize($event, r)">
     </rect>
 
-    <g *ngIf="aisle.rbg" [attr.transform]="getRbgTransform(aisle)">
-      <rect [attr.width]="aisle.rbg.width"
-            [attr.height]="aisle.rbg.height"
-            class="rbg-unit"
-            (mousedown)="startDrag($event, aisle)">
-      </rect>
-
-      <text class="rbg-label"
-            [attr.x]="aisle.rbg.width / 2"
-            y="-6">
-        {{ aisle.rbg.name }}
-      </text>
-    </g>
-
-    <rect *ngIf="selected.includes(aisle)"
-          [attr.x]="aisle.x + aisle.width - 6"
-          [attr.y]="aisle.y"
-          [attr.height]="aisle.height"
-          width="12"
-          class="aisle-resize-handle"
-          (mousedown)="$event.stopPropagation(); resizeTarget = aisle">
-    </rect>
+    <ng-container *ngIf="hoveredRect === r || arrowStartPoint">
+      <circle *ngFor="let p of getConnectors(r)"
+              [attr.cx]="p.x" [attr.cy]="p.y" r="6"
+              fill="orange" class="connector"
+              style="cursor: crosshair; pointer-events: all;"
+              (mousedown)="onConnectorClick($event, p, r); $event.stopPropagation()">
+      </circle>
+    </ng-container>
   </g>
+  </g>
+
+  <g *ngIf="currentView === 'processors'">
+  <g *ngFor="let p of (editor.getProcessors$() | async); trackBy: trackById"
+     (mousedown)="select(p); $event.stopPropagation()"
+     [attr.transform]="'translate(' + p.x + ',' + p.y + ')'"
+     style="cursor: move">
+    <circle r="15" fill="#3498db" [attr.stroke]="isSelected(p) ? 'orange' : 'none'" stroke-width="3" />
+    <text y="25" text-anchor="middle" font-size="10" font-weight="bold" style="user-select: none;">
+      {{p.name}}
+    </text>
+  </g>
+  </g>
+
 </svg>
