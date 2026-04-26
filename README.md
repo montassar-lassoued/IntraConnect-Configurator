@@ -1,31 +1,43 @@
 # 🏗️ IntraConnect Configurator & Visualizer
 
-Ein spezialisierter grafischer Editor zur Generierung komplexer **SystemConfig-Dateien (XML)** für Materialfluss-Steuerungssysteme (MFCS). Das Tool schließt die Lücke zwischen manuellem XML-Coding und intuitiver Anlagenplanung.
+[![Angular](https://img.shields.io/badge/Angular-17+-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.io/)
+[![Version](https://img.shields.io/badge/Status-Active_Development-orange?style=for-the-badge)]()
+
+Ein spezialisierter grafischer Editor zur Generierung komplexer **SystemConfig-Dateien (XML)** für Materialfluss-Steuerungssysteme (MFCS). Dieses Tool schließt die Lücke zwischen manuellem XML-Coding und intuitiver Anlagenplanung.
+
+---
 
 ## 🌟 Kernkonzept
-Anstatt tausende Zeilen XML-Konfiguration händisch zu pflegen, ermöglicht dieser Editor die visuelle Planung von Intralogistik-Anlagen. Er generiert automatisch validierte Strukturen für:
-* **Kommunikationswege** (TCP/UDP, Processors)
-* **Physisches Layout** (Gassen, RBGs, Fördertechnik)
-* **Logische Prozesse** (Routing-Tabellen, Lagerplatz-Berechtigungen)
+
+Anstatt tausende Zeilen XML-Konfiguration händisch zu pflegen, ermöglicht dieser Editor die **visuelle Planung** von Intralogistik-Anlagen. Er generiert automatisch validierte Strukturen für das [MFCS-Backend](https://github.com/montassar-lassoued/MFCS-Backend), einschließlich:
+
+* **Kommunikationswege:** Definition von TCP/UDP-Endpoints und zugehörigen Processors.
+* **Physisches Layout:** Visuelle Platzierung von Gassen, RBGs (Regalbediengeräten) und Fördertechnik.
+* **Logische Prozesse:** Erstellung von Routing-Tabellen und Lagerplatz-Berechtigungen.
+
+---
 
 ## 🛠️ Features & Module
 
 ### 🏗️ Layout & Visualisierung
 * **Aisle-Management:** Platzierung von Gassen mit/ohne Regalbediengeräte (SRM/RBG).
-* **Fördertechnik:** Zeichnen von Förderstrecken mit automatischer Generierung von **Nodes** und **Targets**.
+* **Fördertechnik:** Zeichnen von Förderstrecken mit automatischer Generierung von Nodes und Targets.
 * **Ebenen-Verwaltung:** Support für mehrere Stockwerke (Ebene 1, Ebene 2, etc.) innerhalb einer Konfiguration.
 
-### 📡 Kommunikation (`Modules`)
+### 📡 Kommunikation (Modules)
 * **Netzwerk-Konfiguration:** Definition von TCP/UDP-Connectables (Host, Port, Timeout).
-* **Logical Mapping:** Zuweisung von Java-Prozessorklassen zu physischen oder logischen Endpunkten.
+* **Logical Mapping:** Zuweisung von Java-Prozessorklassen zu physischen oder logischen Endpunkten im Backend.
 
-### 📦 Lagerlogik (`StockMovement`)
+### 📦 Lagerlogik (StockMovement)
 * **SRM/RBG Konfiguration:** Detaillierte Definition von Rack-Sides, Ranges und Gabel-Eigenschaften (LHD).
 * **Loadunit-Management:** Definition von Kategorien (A, B, C) und physischen Abmessungen.
 * **Permission-System:** Visuelle Zuweisung von Einlager-Berechtigungen auf Basis von Fachgrößen oder Gewichtsklassen.
 
-## 📄 Output-Beispiel
-Das Tool transformiert das grafische Layout in das MFCS-Zielformat:
+---
+
+## 📄 Output-Beispiel (XML)
+
+Das Tool transformiert das grafische Layout in das MFCS-Zielformat für die `App_Config.xml`:
 
 ```xml
 <SystemConfig>
