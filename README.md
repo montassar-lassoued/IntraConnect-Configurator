@@ -1,8 +1,3 @@
-# ConveyorEditor
-
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.17.
-
-## Simulation & Konfiguration
 # 🏗️ IntraConnect Configurator & Visualizer
 
 Ein spezialisierter grafischer Editor zur Generierung komplexer **SystemConfig-Dateien (XML)** für Materialfluss-Steuerungssysteme (MFCS). Das Tool schließt die Lücke zwischen manuellem XML-Coding und intuitiver Anlagenplanung.
@@ -74,3 +69,18 @@ Das Tool ist modular aufgebaut, um eine nahtlose Erweiterung der MFCS-Konfigurat
 * **💼 SAP Interface:** Konfiguration von IDoc- oder RFC-Schnittstellen zur ERP-Anbindung.
 * **🌙 NightJob Manager:** Zeitgesteuerte Aufgaben wie Datenbank-Bereinigungen oder Reorganisationen.
 * **📊 Inventory Dashboard:** Echtzeit-Visualisierung von Lagerbeständen direkt im Layout.
+
+## 🛠️ Entwicklung & Installation
+
+Wenn du das Projekt lokal starten möchtest:
+
+1. Repository klonen
+2. `npm install` ausführen
+3. `ng serve` für einen Dev-Server
+4. Navigiere zu `http://localhost:4200/`. Die App aktualisiert sich automatisch bei Code-Änderungen.
+
+---
+
+### ℹ️ Angular CLI Information
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.17. 
+To get more help on the Angular CLI use `ng help` or check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
