@@ -23,7 +23,7 @@ export class EditorComponent {
 
   moduleTypeKeys = Object.keys(MODULE_CONFIG_RULES);
   activeModuleId: string | null = null; // Trackt, welches Modul im Detail editiert wird
-  public fullXmlContent: string = '';
+  //public fullXmlContent: string = '';
 
   constructor(public editor: EditorStateService) {}
 

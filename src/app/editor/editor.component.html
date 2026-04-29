@@ -8,16 +8,19 @@
       </div>
 
       <div class="nav-item action"
-           [class.disabled]="!editor.fullXmlContent"
-           (click)="editor.fullXmlContent ? editor.saveToXml() : null">
+           [class.disabled]="!editor.isDirty"
+           (click)="editor.isDirty ? editor.saveToXml() : null">
         <span class="icon">💾</span> Export XML
       </div>
     </div>
 
     <div class="sidebar-divider"></div>
-    <div class="nav-item" (click)="editor.setView('visualization')" [class.active]="(view$ | async) === 'visualization'">
+
+    <div class="nav-item" (click)="editor.setView('layer-overview')"
+         [class.active]="(view$ | async) === 'layer-overview' || (view$ | async) === 'visualization'">
       <span class="icon">🖼️</span> Visu
     </div>
+
     <div class="nav-item" (click)="editor.setView('processors')" [class.active]="(view$ | async) === 'processors'">
       <span class="icon">⚙️</span> Processors
     </div>
@@ -42,6 +45,7 @@
     <header class="top-toolbar">
       <ng-container [ngSwitch]="view$ | async">
         <div *ngSwitchCase="'visualization'" class="tool-group">
+          <button (click)="editor.setView('layer-overview')" class="btn-back-small">⬅ Layer wechseln</button>
           <button (click)="editor.setMode('select')" [class.active]="(mode$ | async) === 'select'">🖱️ Select</button>
           <button (click)="editor.setMode('draw-rect')" [class.active]="(mode$ | async) === 'draw-rect'">⬛ Place</button>
           <button (click)="editor.setMode('draw-arrow')" [class.active]="(mode$ | async) === 'draw-arrow'">➡️ Path</button>
@@ -61,6 +65,55 @@
         <ng-container [ngSwitch]="view$ | async">
           <app-svg-canvas *ngSwitchCase="'visualization'"></app-svg-canvas>
 
+          <!-- Visu/Layer.ts AREA -->
+          <div *ngSwitchCase="'layer-overview'" class="list-editor">
+
+            <!-- Header Card (für die Eingabe oben) -->
+            <div class="list-header-card">
+              <h2>Visualization-Layers</h2>
+              <div class="add-form">
+                <input #layerNameInput type="text" placeholder="Layer Name">
+                <button class="btn-primary" (click)="editor.addLayer(layerNameInput.value); layerNameInput.value=''">
+                  + Add Layer
+                </button>
+              </div>
+            </div>
+
+            <!-- Grid der Layer Karten -->
+            <div class="layers-grid">
+              <div *ngFor="let layer of (editor.getLayers$() | async)"
+                   class="p-card layer-style"
+                   (click)="editor.setActiveLayer(layer.id)">
+
+                <div class="card-inputs">
+                  <label>Visualization Name</label>
+                  <input [(ngModel)]="layer.name"
+                         (click)="$event.stopPropagation()"
+                         (keydown)="$event.stopPropagation()"
+                         placeholder="Name eingeben...">
+
+                  <label>Layer</label>
+                  <div class="id-badge">{{ layer.id }}</div>
+                </div>
+
+                <div class="card-actions-row">
+                  <button class="btn-edit-action" (click)="editor.setActiveLayer(layer.id)">
+                    🎨 Zeichnen öffnen
+                  </button>
+                  <button (click)="editor.removeLayer(layer.id); $event.stopPropagation()" class="btn-icon-delete">
+                    🗑️ Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div *ngIf="(editor.getLayers$() | async)?.length === 0" class="empty-state-box">
+              <p>Keine Ebenen vorhanden. Erstellen Sie eine Ebene, um zu beginnen.</p>
+            </div>
+          </div>
+
+          <!-- PROCESSORS AREA -->
           <div *ngSwitchCase="'processors'" class="list-editor">
             <div *ngFor="let p of (processors$ | async)"
                  class="p-card"
@@ -87,6 +140,7 @@
             </div>
           </div>
 
+          <!-- MODULES AREA -->
           <div *ngSwitchCase="'modules'" class="module-editor-container">
 
             <div *ngIf="!activeModuleId" class="modules-overview-grid">

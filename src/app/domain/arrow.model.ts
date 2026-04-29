@@ -9,6 +9,7 @@ export interface Arrow {
   cost: number;
   direction: 'R' | 'L' | 'S';
   fromSide: 'top' | 'bottom' | 'left' | 'right';
-    toSide: 'top' | 'bottom' | 'left' | 'right';
+  toSide: 'top' | 'bottom' | 'left' | 'right';
+  layerId:string;
 }
 
