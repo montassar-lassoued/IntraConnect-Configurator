@@ -474,6 +474,30 @@ deleteSelected() {
       ars.appendChild(ae);
     });
     visuEl.appendChild(ars);
+
+    const ails = doc.createElement("Aisles");
+    this.aisles$.value.forEach(aisle => {
+      const ai = doc.createElement("Aisle");
+      ai.setAttribute("id", aisle.id);
+      ai.setAttribute("name", aisle.name);
+      ai.setAttribute("x", aisle.x.toString());
+      ai.setAttribute("y", aisle.y.toString());
+      ai.setAttribute("width", aisle.width.toString());
+      ai.setAttribute("height", aisle.height.toString());
+      ai.setAttribute("orientation", aisle.orientation);
+
+      if (aisle.rbg) {
+        const rbgEl = doc.createElement("RBG");
+        rbgEl.setAttribute("id", aisle.rbg.id);
+        rbgEl.setAttribute("positionOffset", aisle.rbg.positionOffset.toString());
+        rbgEl.setAttribute("width", aisle.rbg.width.toString());
+        rbgEl.setAttribute("height", aisle.rbg.height.toString());
+        ai.appendChild(rbgEl);
+      }
+      ails.appendChild(ai);
+    });
+      visuEl.appendChild(ails);
+
     visWrapper.appendChild(visuEl);
   }
 
