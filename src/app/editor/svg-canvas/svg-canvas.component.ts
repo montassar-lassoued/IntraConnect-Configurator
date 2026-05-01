@@ -76,7 +76,8 @@ select(obj: any) {
         id: 'R' + Date.now(),
         name: 'Node_' + (this.rects.length + 1),
         x: x - 40, y: y - 30, width: 80, height: 60,
-        layerId: this.editor.getActiveLayerId()
+        layerId: this.editor.getActiveLayerId(),
+        transitPoint:false,
       });
       //this.editor.setMode('select');
     } else if (mode === 'draw-aisle-SRM') {
@@ -87,6 +88,7 @@ select(obj: any) {
         width: 200, height: 40,
         orientation: 'horizontal',
         layerId: this.editor.getActiveLayerId(),
+        transitPoint:false,
         rbg: {
           id: 'RBG' + Date.now(),
           name: 'RBG ' + (this.aisles.length + 1),
@@ -103,7 +105,8 @@ select(obj: any) {
              x: x, y: y - 20,
              width: 200, height: 40,
              orientation: 'horizontal',
-             layerId: this.editor.getActiveLayerId()
+             layerId: this.editor.getActiveLayerId(),
+             transitPoint:false,
            });
            this.editor.setMode('select');
       }else if (mode === 'draw-processor') {

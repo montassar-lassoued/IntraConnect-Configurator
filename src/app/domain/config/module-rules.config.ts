@@ -217,7 +217,7 @@ export const MODULE_CONFIG_RULES: { [moduleName: string]: ModuleRule } = {
         attributes: [],
         textTags: [],
         childSections: ['Permission'],
-        allowMultiple: false
+        allowMultiple: true
       },
       'Permission': {
         attributes: ['name'],

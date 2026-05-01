@@ -148,7 +148,8 @@ export class EditorStateService {
       width: 45,
       height: 45,
       controller: '',
-      layerId: this.activeLayerId$.value || ''
+      layerId: this.activeLayerId$.value || '',
+      transitPoint:false,
     };
     this.rects$.next([...this.rects$.value, newRect]);
   }
@@ -320,7 +321,7 @@ deleteSelected() {
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlString, "text/xml");
 
-      // 1. ALTE DATEN LÖSCHEN (Reset)
+      // alte Daten löschen
           this.modules$.next([]);       // XML-Module leeren
           this.rects$.next([]);         // Prozessoren (Rechtecke) leeren
           this.arrows$.next([]);        // Pfeile leeren
@@ -363,8 +364,8 @@ deleteSelected() {
 
         allVisus.forEach(visu => {
           // LAYER REGISTRIEREN
-          const layerId = visu.getAttribute("id") || ('layer_' + Math.random().toString(36).substr(2, 5));
-          const layerName = visu.getAttribute("name") || 'Unbenannte Visu';
+          const layerId = visu.getAttribute("layer") || ('layer_' + Math.random().toString(36).substr(2, 5));
+          const layerName = visu.getAttribute("id") || 'Unbenannte Visu';
 
           loadedLayers.push({ id: layerId, name: layerName });
 
@@ -379,6 +380,7 @@ deleteSelected() {
               width: Number(el.getAttribute("width")),
               height: Number(el.getAttribute("height")),
               controller: el.getAttribute("controller") || '',
+              transitPoint: Boolean(el.getAttribute("transit-point") || 'false'),
               layerId: layerId // Wir nutzen die ID des aktuellen Visu-Tags
             });
           });
@@ -495,7 +497,7 @@ deleteSelected() {
 
     Array.from(el.attributes).forEach(a => node.attributes[a.name] = a.value);
 
-    // Spezialbehandlung: Wenn das Element nur Text hat (z.B. <Host>localhost</Host>)
+     /*Spezialbehandlung: Wenn das Element nur Text hat (z.B. <Host>localhost</Host>)*/
     if (el.children.length === 0 && el.textContent?.trim()) {
        node.textContent = el.textContent;
        node.isTextTag = true;
@@ -525,108 +527,151 @@ deleteSelected() {
 
   // --- INJEKTOREN ---
   private injectVisu(doc: Document, uiModule: Element) {
-    let visWrapper = uiModule.getElementsByTagName("Visualization")[0];
-    if (!visWrapper) {
-      visWrapper = doc.createElement("Visualization");
-      uiModule.appendChild(visWrapper);
+      // 1. Das Visualization-Wrapper-Tag finden oder erstellen
+      let visWrapper = uiModule.getElementsByTagName("Visualization")[0];
+      if (!visWrapper) {
+        visWrapper = doc.createElement("Visualization");
+        uiModule.appendChild(visWrapper);
+      } else {
+        visWrapper.innerHTML = '';
+      }
+
+      // 2. Über alle existierenden Layer iterieren
+      this.layers$.value.forEach(layer => {
+        const visuEl = doc.createElement("Visu");
+        visuEl.setAttribute("layer", layer.id);
+        visuEl.setAttribute("id", layer.name);
+
+        // --- RECTS filtern ---
+        const rs = doc.createElement("Rects");
+        this.rects$.value
+          .filter(r => r.layerId === layer.id) // Filter auf aktuellen Layer
+          .forEach(r => {
+            const re = doc.createElement("Rect");
+            re.setAttribute("id", r.id || '');
+            re.setAttribute("name", r.name || '');
+            re.setAttribute("x", Math.round(r.x || 0).toString());
+            re.setAttribute("y", Math.round(r.y || 0).toString());
+            re.setAttribute("width", (r.width || 0).toString());
+            re.setAttribute("height", (r.height || 0).toString());
+            re.setAttribute("controller", r.controller || '');
+             if(r.transitPoint === true){
+                    re.setAttribute("transit-point", 'true');
+                   }
+            rs.appendChild(re);
+          });
+        if (rs.childNodes.length > 0) visuEl.appendChild(rs);
+
+        // --- ARROWS filtern ---
+        const ars = doc.createElement("Arrows");
+        this.arrows$.value
+          .filter(a => a.layerId === layer.id) // Filter auf aktuellen Layer
+          .forEach(a => {
+            const ae = doc.createElement("Arrow");
+            ae.setAttribute("id", a.id || '');
+            ae.setAttribute("from", a.fromRectId || '');
+            ae.setAttribute("to", a.toRectId || '');
+            ae.setAttribute("fromSide", a.fromSide || '');
+            ae.setAttribute("toSide", a.toSide || '');
+            ae.setAttribute("type", a.type || '');
+            ae.setAttribute("direction", a.direction || '');
+            ae.setAttribute("speed", (a.speed ?? 5).toString());
+            ae.setAttribute("cost", (a.cost ?? 100).toString());
+
+            const wpStr = (a.waypoints || [])
+              .map(w => `${Math.round(w.x || 0)},${Math.round(w.y || 0)}`)
+              .join(';');
+            ae.setAttribute("waypoints", wpStr);
+            ars.appendChild(ae);
+          });
+        if (ars.childNodes.length > 0) visuEl.appendChild(ars);
+
+        // --- AISLES filtern ---
+        const ails = doc.createElement("Aisles");
+        this.aisles$.value
+          .filter(aisle => aisle.layerId === layer.id) // Filter auf aktuellen Layer
+          .forEach(aisle => {
+            const ai = doc.createElement("Aisle");
+            ai.setAttribute("id", aisle.id);
+            ai.setAttribute("name", aisle.name);
+            ai.setAttribute("x", aisle.x.toString());
+            ai.setAttribute("y", aisle.y.toString());
+            ai.setAttribute("width", aisle.width.toString());
+            ai.setAttribute("height", aisle.height.toString());
+            ai.setAttribute("orientation", aisle.orientation);
+
+            if (aisle.rbg) {
+              const rbgEl = doc.createElement("RBG");
+              rbgEl.setAttribute("id", aisle.rbg.id);
+              rbgEl.setAttribute("positionOffset", aisle.rbg.positionOffset.toString());
+              rbgEl.setAttribute("width", aisle.rbg.width.toString());
+              rbgEl.setAttribute("height", aisle.rbg.height.toString());
+              ai.appendChild(rbgEl);
+            }
+            ails.appendChild(ai);
+          });
+        if (ails.childNodes.length > 0) visuEl.appendChild(ails);
+
+        // Die fertige Visu dem Wrapper hinzufügen
+        visWrapper.appendChild(visuEl);
+      });
     }
 
-    const visuEl = doc.createElement("Visu");
-    visuEl.setAttribute("id", "visualization_1");
+ private injectStockNodes(doc: Document, stockModule: Element) {
+   const nodesWrapper = doc.createElement("Nodes");
 
-    const rs = doc.createElement("Rects");
-    this.rects$.value.forEach(r => {
-      const re = doc.createElement("Rect");
-      re.setAttribute("id", r.id || '');
-      re.setAttribute("name", r.name || '');
-      re.setAttribute("x", Math.round(r.x || 0).toString());
-      re.setAttribute("y", Math.round(r.y || 0).toString());
-      re.setAttribute("width", (r.width || 0).toString());
-      re.setAttribute("height", (r.height || 0).toString());
-      re.setAttribute("controller", r.controller || '');
-      re.setAttribute("layer", r.layerId || '');
-      rs.appendChild(re);
-    });
-    visuEl.appendChild(rs);
+   // 1. Alle verfügbaren Rects holen
+   const allRects = this.rects$.value;
 
-    const ars = doc.createElement("Arrows");
-    this.arrows$.value.forEach(a => {
-      const ae = doc.createElement("Arrow");
-      ae.setAttribute("id", a.id || '');
-      ae.setAttribute("from", a.fromRectId || '');
-      ae.setAttribute("to", a.toRectId || '');
-      ae.setAttribute("fromSide", a.fromSide || '');
-      ae.setAttribute("toSide", a.toSide || '');
-      ae.setAttribute("type", a.type || '');
-      ae.setAttribute("direction", a.direction || '');
-      ae.setAttribute("speed", (a.speed ?? 5).toString());
-      ae.setAttribute("cost", (a.cost ?? 100).toString());
-      ae.setAttribute("layer", a.layerId || '');
+   // 2. Wir gruppieren die Rects nach Namen, um physikalische Dubletten (wie Ü-Plätze)
+   // zu einer logischen Einheit (Node) zusammenzufassen.
+   const uniqueNodeNames = Array.from(new Set(allRects.map(r => r.name).filter(n => !!n)));
 
-      const wpStr = (a.waypoints || [])
-        .map(w => `${Math.round(w.x || 0)},${Math.round(w.y || 0)}`)
-        .join(';');
-      ae.setAttribute("waypoints", wpStr);
+   uniqueNodeNames.forEach(nodeName => {
+     //Finde alle Rects, die diesen Namen teilen (z.B. C in Ebene 1 und C in Ebene 2)
+     const relatedRects = allRects.filter(r => r.name === nodeName);
 
-      ars.appendChild(ae);
-    });
-    visuEl.appendChild(ars);
+     const isAnyTransit = relatedRects.some(r => r.transitPoint);
+     if (isAnyTransit && relatedRects.length < 2) {
+        console.warn(`Punkt ${nodeName} ist als Transit markiert, existiert aber nur in einem Layer!`);
+     }
 
-    const ails = doc.createElement("Aisles");
-    this.aisles$.value.forEach(aisle => {
-      const ai = doc.createElement("Aisle");
-      ai.setAttribute("id", aisle.id);
-      ai.setAttribute("name", aisle.name);
-      ai.setAttribute("x", aisle.x.toString());
-      ai.setAttribute("y", aisle.y.toString());
-      ai.setAttribute("width", aisle.width.toString());
-      ai.setAttribute("height", aisle.height.toString());
-      ai.setAttribute("orientation", aisle.orientation);
-      ai.setAttribute("layer", aisle.layerId || '');
+     const primary = relatedRects[0];
 
-      if (aisle.rbg) {
-        const rbgEl = doc.createElement("RBG");
-        rbgEl.setAttribute("id", aisle.rbg.id);
-        rbgEl.setAttribute("positionOffset", aisle.rbg.positionOffset.toString());
-        rbgEl.setAttribute("width", aisle.rbg.width.toString());
-        rbgEl.setAttribute("height", aisle.rbg.height.toString());
-        ai.appendChild(rbgEl);
-      }
-      ails.appendChild(ai);
-    });
-      visuEl.appendChild(ails);
+     const nodeEl = doc.createElement("Node");
+     nodeEl.setAttribute("point", nodeName!);
+     nodeEl.setAttribute("controller", primary.controller || '');
 
-    visWrapper.appendChild(visuEl);
-  }
+     // 3. Targets sammeln: Wir schauen uns die Pfeile ALLER beteiligten Rects an
+     const targetMap = new Map<string, Element>();
 
-  private injectStockNodes(doc: Document, stockModule: Element) {
-    const nodesWrapper = doc.createElement("Nodes");
+     relatedRects.forEach(rect => {
+       this.arrows$.value
+         .filter(a => a.fromRectId === rect.id)
+         .forEach(a => {
+           const targetRect = allRects.find(tr => tr.id === a.toRectId);
+           if (targetRect && targetRect.name) {
+             // Nur hinzufügen, wenn dieses Target für diesen Node noch nicht existiert
+             if (!targetMap.has(targetRect.name)) {
+               const targetEl = doc.createElement("Target");
+               targetEl.setAttribute("point", targetRect.name);
+               targetEl.setAttribute("direction", a.direction || "");
+               targetEl.setAttribute("cost", (a.cost ?? 100).toString());
 
-    this.rects$.value.forEach(r => {
-      const nodeEl = doc.createElement("Node");
-      nodeEl.setAttribute("point", r.name || '');
-      nodeEl.setAttribute("controller", r.controller || '');
+               targetMap.set(targetRect.name, targetEl);
+             }
+           }
+         });
+     });
 
-      // Targets basierend auf den Pfeilen finden
-      this.arrows$.value
-        .filter(a => a.fromRectId === r.id)
-        .forEach(a => {
-          const targetRect = this.rects$.value.find(tr => tr.id === a.toRectId);
-          const targetEl = doc.createElement("Target");
+     // Alle gefundenen Targets an den Node hängen
+     targetMap.forEach(tEl => nodeEl.appendChild(tEl));
 
-          targetEl.setAttribute("point", targetRect?.name || "");
-          targetEl.setAttribute("direction", a.direction || "");
-          targetEl.setAttribute("cost", (a.cost ?? 100).toString());
+     nodesWrapper.appendChild(nodeEl);
+   });
 
-          nodeEl.appendChild(targetEl);
-        });
-
-      nodesWrapper.appendChild(nodeEl);
-    });
-
-    // Einfügen am Anfang des Moduls
-    stockModule.insertBefore(nodesWrapper, stockModule.firstChild);
-  }
+   stockModule.insertBefore(nodesWrapper, stockModule.firstChild);
+ }
 
   // --- HELPERS ---
   private scanControllers(xmlDoc: Document) {

@@ -17,6 +17,12 @@
           [class.selected]="isSelected(aisle)"
           (mousedown)="startDrag($event, aisle)">
     </rect>
+    <text [attr.x]="aisle.x + aisle.width / 2"
+          [attr.y]="aisle.y - 5"
+          text-anchor="middle"
+          style="font-family: Arial; font-size: 14px; font-weight: bold; fill: #555; pointer-events: none; user-select: none;">
+      {{ aisle.name }}
+    </text>
     <rect *ngIf="aisle.rbg"
           class="rbg-unit"
           [attr.x]="aisle.x + (aisle.width * aisle.rbg.positionOffset) - (aisle.rbg.width / 2)"

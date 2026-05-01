@@ -19,4 +19,5 @@ export interface Aisle {
   initialX?: number; // Für Drag & Drop
   initialY?: number;
   layerId: string;
+  transitPoint: boolean;
 }
