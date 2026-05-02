@@ -3,4 +3,5 @@ export interface PointNode {
   x: number;
   y: number;
   controller?: string;
+  layerId:string;
 }

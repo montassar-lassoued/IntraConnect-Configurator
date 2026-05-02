@@ -18,4 +18,6 @@ export interface Aisle {
   rbg?: RBG;
   initialX?: number; // Für Drag & Drop
   initialY?: number;
+  layerId: string;
+  transitPoint: boolean;
 }

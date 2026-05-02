@@ -21,6 +21,8 @@ export class SvgCanvasComponent {
 
   currentView: string = '';
 
+// Layer-ID (Aktives Layer)
+   private activeLayerId: string = '';
   // Drag & Interaction States
   public waypointTarget: { arrow: Arrow, index: number } | null = null;
   public dragTarget: any = null;
@@ -33,14 +35,20 @@ export class SvgCanvasComponent {
   public currentMousePos = { x: 0, y: 0 };
 
   constructor(public editor: EditorStateService) {
+    //View abonnieren
+        this.editor.getView$().subscribe(v => this.currentView = v);
+        // Aktive Layer-ID mitverfolgen
+            this.editor.getActiveLayerId$().subscribe(id => {
+              this.activeLayerId = id || '';
+            });
+
     // Abonnieren der Streams vom Service
     this.editor.getRects$().subscribe(r => this.rects = r);
     this.editor.getArrows$().subscribe(a => this.arrows = a);
     this.editor.getAisles$().subscribe(a => this.aisles = a);
     this.editor.getSelected$().subscribe(s => this.selected = s);
 
-    //View abonnieren
-    this.editor.getView$().subscribe(v => this.currentView = v);
+
   }
 
   // Hilfsmethode für Mauskoordinaten relativ zum SVG
@@ -67,7 +75,9 @@ select(obj: any) {
       this.editor.addRect({
         id: 'R' + Date.now(),
         name: 'Node_' + (this.rects.length + 1),
-        x: x - 40, y: y - 30, width: 80, height: 60
+        x: x - 40, y: y - 30, width: 80, height: 60,
+        layerId: this.editor.getActiveLayerId(),
+        transitPoint:false,
       });
       //this.editor.setMode('select');
     } else if (mode === 'draw-aisle-SRM') {
@@ -77,6 +87,8 @@ select(obj: any) {
         x: x, y: y - 20,
         width: 200, height: 40,
         orientation: 'horizontal',
+        layerId: this.editor.getActiveLayerId(),
+        transitPoint:false,
         rbg: {
           id: 'RBG' + Date.now(),
           name: 'RBG ' + (this.aisles.length + 1),
@@ -92,7 +104,9 @@ select(obj: any) {
              name: 'Gasse ' + (this.aisles.length + 1),
              x: x, y: y - 20,
              width: 200, height: 40,
-             orientation: 'horizontal'
+             orientation: 'horizontal',
+             layerId: this.editor.getActiveLayerId(),
+             transitPoint:false,
            });
            this.editor.setMode('select');
       }else if (mode === 'draw-processor') {
@@ -210,7 +224,8 @@ onConnectorClick(evt: MouseEvent, p: any, rect: RectShape) {
         type: 'roller',
         speed: 5,
         direction: 'S',
-        cost: 100
+        cost: 100,
+        layerId: this.editor.getActiveLayerId()
       };
 
       this.editor.addArrow(newArrow);

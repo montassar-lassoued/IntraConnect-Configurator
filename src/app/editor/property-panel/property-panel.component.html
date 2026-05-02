@@ -13,15 +13,20 @@
           {{ ctrl }}
         </option>
       </select>
+      <label>Transit-Point</label>
+      <select [(ngModel)]="obj.transitPoint" (ngModelChange)="onRecValueChange()">
+        <option [ngValue]="true">Ja</option>
+        <option [ngValue]="false">Nein</option>
+      </select>
       <label>Breite</label>
-      <input type="number" [(ngModel)]="obj.width">
+      <input type="number" [(ngModel)]="obj.width" (ngModelChange)="onRecValueChange()">
       <label>Höhe</label>
-      <input type="number" [(ngModel)]="obj.height">
+      <input type="number" [(ngModel)]="obj.height" (ngModelChange)="onRecValueChange()">
     </div>
 
     <div *ngIf="isArrow(obj)" class="field">
       <label>Typ</label>
-      <select [(ngModel)]="obj.type">
+      <select [(ngModel)]="obj.type" (ngModelChange)="onArrowValueChange()">
         <option value="roller">Rollenbahn</option>
         <option value="belt">Gurtförderer</option>
         <option value="chain">Kettenförderer</option>
@@ -38,7 +43,7 @@
       <input type="number" [(ngModel)]="obj.speed" (ngModelChange)="onArrowValueChange()">
 
       <label>Kosten</label>
-      <input type="number" [(ngModel)]="obj.cost">
+      <input type="number" [(ngModel)]="obj.cost" (ngModelChange)="onArrowValueChange()">
     </div>
 
     <div *ngIf="isAisle(obj)" class="field">

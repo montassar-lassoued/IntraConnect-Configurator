@@ -8,16 +8,19 @@
       </div>
 
       <div class="nav-item action"
-           [class.disabled]="!editor.fullXmlContent"
-           (click)="editor.fullXmlContent ? editor.saveToXml() : null">
+           [class.disabled]="!editor.isDirty"
+           (click)="editor.isDirty ? editor.saveToXml() : null">
         <span class="icon">💾</span> Export XML
       </div>
     </div>
 
     <div class="sidebar-divider"></div>
-    <div class="nav-item" (click)="editor.setView('visualization')" [class.active]="(view$ | async) === 'visualization'">
+
+    <div class="nav-item" (click)="editor.setView('layer-overview')"
+         [class.active]="(view$ | async) === 'layer-overview' || (view$ | async) === 'visualization'">
       <span class="icon">🖼️</span> Visu
     </div>
+
     <div class="nav-item" (click)="editor.setView('processors')" [class.active]="(view$ | async) === 'processors'">
       <span class="icon">⚙️</span> Processors
     </div>
@@ -42,6 +45,7 @@
     <header class="top-toolbar">
       <ng-container [ngSwitch]="view$ | async">
         <div *ngSwitchCase="'visualization'" class="tool-group">
+          <button (click)="editor.setView('layer-overview')" class="btn-back-small">⬅ Layer wechseln</button>
           <button (click)="editor.setMode('select')" [class.active]="(mode$ | async) === 'select'">🖱️ Select</button>
           <button (click)="editor.setMode('draw-rect')" [class.active]="(mode$ | async) === 'draw-rect'">⬛ Place</button>
           <button (click)="editor.setMode('draw-arrow')" [class.active]="(mode$ | async) === 'draw-arrow'">➡️ Path</button>
@@ -61,6 +65,55 @@
         <ng-container [ngSwitch]="view$ | async">
           <app-svg-canvas *ngSwitchCase="'visualization'"></app-svg-canvas>
 
+          <!-- Visu/Layer.ts AREA -->
+          <div *ngSwitchCase="'layer-overview'" class="list-editor">
+
+            <!-- Header Card (für die Eingabe oben) -->
+            <div class="list-header-card">
+              <h2>Visualization-Layers</h2>
+              <div class="add-form">
+                <input #layerNameInput type="text" placeholder="Layer Name">
+                <button class="btn-primary" (click)="editor.addLayer(layerNameInput.value); layerNameInput.value=''">
+                  + Add Layer
+                </button>
+              </div>
+            </div>
+
+            <!-- Grid der Layer Karten -->
+            <div class="layers-grid">
+              <div *ngFor="let layer of (editor.getLayers$() | async)"
+                   class="p-card layer-style"
+                   (click)="editor.setActiveLayer(layer.id)">
+
+                <div class="card-inputs">
+                  <label>Visualization Name</label>
+                  <input [(ngModel)]="layer.name"
+                         (click)="$event.stopPropagation()"
+                         (keydown)="$event.stopPropagation()"
+                         placeholder="Name eingeben...">
+
+                  <label>Layer</label>
+                  <div class="id-badge">{{ layer.id }}</div>
+                </div>
+
+                <div class="card-actions-row">
+                  <button class="btn-edit-action" (click)="editor.setActiveLayer(layer.id)">
+                    🎨 Zeichnen öffnen
+                  </button>
+                  <button (click)="editor.removeLayer(layer.id); $event.stopPropagation()" class="btn-icon-delete">
+                    🗑️ Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div *ngIf="(editor.getLayers$() | async)?.length === 0" class="empty-state-box">
+              <p>Keine Ebenen vorhanden. Erstellen Sie eine Ebene, um zu beginnen.</p>
+            </div>
+          </div>
+
+          <!-- PROCESSORS AREA -->
           <div *ngSwitchCase="'processors'" class="list-editor">
             <div *ngFor="let p of (processors$ | async)"
                  class="p-card"
@@ -87,6 +140,7 @@
             </div>
           </div>
 
+          <!-- MODULES AREA -->
           <div *ngSwitchCase="'modules'" class="module-editor-container">
 
             <div *ngIf="!activeModuleId" class="modules-overview-grid">
@@ -129,28 +183,40 @@
               </div>
 
               <ng-template #nodeTemplate let-node let-parentArray="parentArray">
-                <div class="tag-block" [class.nested]="!node.isTextTag">
+                <div class="tag-block">
 
+                  <!-- 1. ZEILE: DER NAME (Fett / Farbe) -->
                   <div class="tag-header">
-                    <div class="tag-label">
-                      <span class="tag-bracket"></span>
-                      <span class="tag-name">{{ node.tag }}</span>
-                      <span class="tag-bracket"></span>
-                    </div>
-                    <button (click)="editor.removeNode(parentArray, node)" class="btn-minimal" title="Löschen">×</button>
+                    <span class="tag-name">{{ node.tag }}</span>
+                    <button (click)="editor.removeNode(parentArray, node)" class="btn-minimal">🗑️</button>
                   </div>
 
+                  <!-- DER ABSATZ (Eingerückt) -->
                   <div class="tag-content">
 
-                    <div class="attribute-grid" *ngIf="(node.attributes | keyvalue).length > 0">
-                      <div *ngFor="let attr of node.attributes | keyvalue; trackBy: trackByKey" class="input-field">
-                        <label>{{ attr.key }}</label>
-                        <input [(ngModel)]="$any(node.attributes)[$any(attr.key)]"
-                               (ngModelChange)="editor.updateModules()"
-                               [ngModelOptions]="{ updateOn: 'blur' }">
-                      </div>
+                    <!-- 2. ZEILE: DIE ATTRIBUTE (Nebeneinander) -->
+                    <div class="attribute-grid" *ngIf="node.attributes">
+                      <!-- 1. Zuerst die Attribute in der richtigen Reihenfolge laut Cache -->
+                      <ng-container *ngFor="let attrKey of node.attributeOrder">
+                        <div class="input-field" *ngIf="node.attributes[attrKey] !== undefined">
+                          <label>{{ attrKey }}</label>
+                          <input [(ngModel)]="node.attributes[attrKey]"
+                                 (ngModelChange)="editor.updateModules()"
+                                 [ngModelOptions]="{ updateOn: 'blur' }">
+                        </div>
+                      </ng-container>
+
+                      <!-- 2. Fallback: Falls ein Attribut im XML war, das NICHT in der Regel steht -->
+                      <ng-container *ngFor="let attr of node.attributes | keyvalue">
+                        <div class="input-field" *ngIf="!node.attributeOrder?.includes($any(attr.key))">
+                          <label>{{ attr.key }}</label>
+                          <input [(ngModel)]="node.attributes[$any(attr.key)]"
+                                 (ngModelChange)="editor.updateModules()">
+                        </div>
+                      </ng-container>
                     </div>
 
+                    <!-- 3. ZEILE: TEXT-ELEMENTE (z.B. User/Pass) -->
                     <div class="text-tag-area" *ngIf="editor.hasTextChildren(node)">
                       <ng-container *ngFor="let sub of node.children">
                         <div *ngIf="sub.isTextTag" class="text-input-field">
@@ -160,6 +226,7 @@
                       </ng-container>
                     </div>
 
+                    <!-- 4. ZEILE: KINDER-TAGS (Rekursiv) -->
                     <div class="nested-children-area">
                       <ng-container *ngFor="let nested of node.children">
                         <div *ngIf="!nested.isTextTag">
@@ -168,19 +235,15 @@
                       </ng-container>
                     </div>
 
+                    <!-- 5. ZEILE: ADD BUTTONS -->
                     <div class="tag-footer-actions" *ngIf="!node.isTextTag">
                       <button *ngFor="let nextTag of editor.getPossibleChildren(node)"
                               (click)="editor.addChildFromSchema(node, nextTag)" class="btn-add-sub">
-                        + {{ nextTag }}
+                        + Add {{ nextTag }}
                       </button>
                     </div>
-                  </div>
 
-                  <div class="tag-header footer-tag" *ngIf="!node.isTextTag">
-                    <span class="tag-bracket"></span>
-                    <span class="tag-name">{{ node.tag }}</span>
-                    <span class="tag-bracket"></span>
-                  </div>
+                  </div> <!-- Ende Absatz -->
                 </div>
               </ng-template>
             </div>

@@ -137,3 +137,17 @@
     &.save { background: #fbc531; color: #2f3640; }
   }
 }
+.layer-card {
+  border-left: 4px solid #3498db;
+  &:hover {
+    background: #f8f9fa;
+  }
+}
+.btn-back-small {
+  background: #eee;
+  border: 1px solid #ccc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+}

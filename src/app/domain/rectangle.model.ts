@@ -7,4 +7,6 @@ export interface RectShape {
   height: number;
   controller?: string;
   initialX?: number; initialY?: number; // Hilfsvariablen für Drag
+  layerId:string;
+  transitPoint: boolean;
 }

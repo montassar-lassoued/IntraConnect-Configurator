@@ -15,6 +15,7 @@ export interface ConfigNode {
   // Hilfs-Flags für die UI
   isOpen?: boolean;         // Ist der Baum im Editor ausgeklappt?
   isTextTag?: boolean;      // Handelt es sich um ein einfaches Feld wie <Username>?
+  attributeOrder?: string[];
 }
 
 export interface TagDefinition {
@@ -204,10 +205,10 @@ export const MODULE_CONFIG_RULES: { [moduleName: string]: ModuleRule } = {
       'Categories': {
         attributes: [],
         textTags: [],
-        childSections: ['Categorie'],
+        childSections: ['Category'],
         allowMultiple: false
       },
-      'Categorie': {
+      'Category': {
         attributes: ['name', 'height', 'width', 'length', 'minWeight', 'maxWeight'],
         textTags: [],
         childSections: [],
@@ -217,14 +218,20 @@ export const MODULE_CONFIG_RULES: { [moduleName: string]: ModuleRule } = {
         attributes: [],
         textTags: [],
         childSections: ['Permission'],
-        allowMultiple: false
+        allowMultiple: true
       },
       'Permission': {
         attributes: ['name'],
-        textTags: ['Categorie'], // Erlaubt einfache <Categorie>A</Categorie> Tags
-        childSections: [],
+        textTags: [],
+        childSections: ['LuCategory'],
         allowMultiple: true
-      }
+      },
+        'LuCategory': {
+          attributes: ['name'],
+          textTags: [],
+          childSections: [],
+           allowMultiple: true
+           },
     }
   },
 

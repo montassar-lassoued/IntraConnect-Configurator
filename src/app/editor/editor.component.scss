@@ -295,114 +295,86 @@
 }
 // XML-TAG BLÖCKE
 .tag-block {
-  border: 1px solid #e9ecef;
-  border-left: 4px solid #3498db; // Standardmäßig blau für Container
-  border-radius: 4px;
-  margin-bottom: 15px;
-  background: #fff;
-  transition: all 0.2s ease;
+  margin-bottom: 20px;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
 
-  // Wenn ein Tag innerhalb eines anderen liegt
-  &.nested {
-    margin-left: 10px;
-    border-left-color: #bdc3c7; // Etwas dezenter für Unterelemente
-    box-shadow: -2px 0 5px rgba(0,0,0,0.02);
-  }
-
-  .tag-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 15px;
-    background: #f8f9fa;
-    border-bottom: 1px solid #f1f3f5;
-
-    .tag-name {
-      font-family: 'Courier New', monospace;
-      font-weight: bold;
-      color: #8e44ad; // XML-Tag Farbe
-    }
-
-    .tag-bracket {
-      color: #adb5bd;
-      font-weight: normal;
-    }
-
-    .btn-minimal {
-      background: none; border: none; color: #adb5bd;
-      cursor: pointer; font-size: 16px;
-      &:hover { color: #e74c3c; }
-    }
-
-    // Speziell für den Footer-Tag (schließendes Tag)
-    &.footer-tag {
-      border-bottom: none;
-      border-top: 1px solid #f1f3f5;
-      background: #fcfcfc;
-      opacity: 0.6;
-      font-size: 0.9em;
-    }
-  }
-
-  // DER ENTSCHEIDENDE TEIL: Einrückung des Inhalts
+  // Die Einrückung für ALLES, was unter dem Namen kommt
   .tag-content {
-    padding: 15px 15px 15px 25px; // 25px Padding links erzeugt den "Baum-Effekt"
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+    margin-left: 25px; // Der XML-Absatz
+    border-left: 1px solid #e0e0e0; // Optionale Guide-Line
+    padding-left: 10px;
   }
 }
 
-// ATTRIBUTE GRID
+.tag-header {
+  display: flex;
+  align-items: center;
+  padding: 5px 0;
+
+  .tag-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: #2c3e50; // Dunkelblau/Grau für Hauptnamen
+    text-transform: uppercase; // Optional für mehr "Gewicht"
+    letter-spacing: 0.5px;
+  }
+
+  .btn-minimal {
+    margin-left: 10px;
+    opacity: 0.3;
+    &:hover { opacity: 1; color: #e74c3c; }
+  }
+}
+
+// Attribute in einer eigenen Zeile unter dem Namen, aber nebeneinander
 .attribute-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
-  padding: 10px;
-  background: rgba(52, 152, 219, 0.03);
-  border-radius: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px; // Abstand zwischen den Attributen
+  padding: 8px 0;
+  margin-bottom: 5px;
 
   .input-field {
     display: flex;
-    flex-direction: column;
-    label { font-size: 10px; color: #7f8c8d; margin-bottom: 2px; text-transform: uppercase; }
+    align-items: center;
+    font-family: 'Segoe UI', sans-serif;
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #7f8c8d; // Dezentere Farbe für Attribut-Labels
+      margin-right: 8px;
+    }
+
     input {
-      padding: 4px 8px; border: 1px solid #dcdde1; border-radius: 3px; font-size: 12px;
-      &:focus { outline: none; border-color: #3498db; background: white; }
+      border: 1px solid #dcdde1;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 13px;
+      background: white;
+      width: 120px; // Feste Breite für Ordnung, oder dynamisch
+
+      &:focus {
+        border-color: #3498db;
+        outline: none;
+        box-shadow: 0 0 4px rgba(52,152,219,0.2);
+      }
     }
   }
 }
 
 // TEXT-TAGS (z.B. Username/Password)
 .text-tag-area {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 5px 0;
-
+  margin-top: 5px;
   .text-input-field {
     display: flex;
     align-items: center;
-    gap: 15px;
-    padding: 4px 0;
-    border-bottom: 1px solid #f8f9fa;
-
-    label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #2c3e50;
-      min-width: 120px; // Einheitliche Breite für Labels wie "Username"
-    }
-
-    input {
-      flex: 1;
-      max-width: 400px;
-      padding: 5px 8px;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
-      font-size: 13px;
-      &:focus { border-color: #3498db; outline: none; }
-    }
+    gap: 10px;
+    margin-bottom: 8px;
+    label { font-size: 12px; font-weight: bold; min-width: 100px; }
+    input { border: 1px solid #ddd; border-radius: 4px; padding: 4px; flex: 1; max-width: 300px; }
   }
 }
 
@@ -518,4 +490,112 @@
 @keyframes flash-border {
   0% { outline: 4px solid #3498db; }
   100% { outline: 0px solid transparent; }
+}
+
+// Spezifisches Grid für Layer (ähnlich wie Processors)
+.layers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+// Header Bereich Styling
+.list-header-card {
+  grid-column: 1 / -1;
+  background: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  border: 1px solid #dee2e6;
+  --display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+
+  h2 { margin: 5; font-size: 25px; color: #2c3e50; }
+  .add-form {
+    display: flex;
+    gap: 10px;
+    input {
+      padding: 8px 12px;
+      border: 1px solid #ced4da;
+      border-radius: 6px;
+      width: 200px;
+    }
+  button {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 7px 14px;
+        border: 1px solid #ced4da;
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: 0.2s;
+
+        &:hover { background: #f1f3f5; }
+        &.active { background: #3498db; color: white; border-color: #2980b9; }
+        &.btn-primary { background: #2ecc71; color: white; border: none; &:hover { background: #27ae60; } }
+        &.btn-export { background: #34495e; color: white; border: none; margin-left: 20px; }
+      }
+  }
+}
+
+// Layer-spezifische Card Anpassung (erbt von .p-card)
+.p-card.layer-style {
+  border-top: 4px solid #3498db; // Blau statt Lila für Visu
+  cursor: pointer;
+
+  &:hover {
+    border-color: #3498db;
+    background: #fdfdfd;
+  }
+
+  .id-badge {
+    font-size: 11px;
+    background: #f1f3f5;
+    padding: 5px 10px;
+    border-radius: 4px;
+    color: #7f8c8d;
+    font-family: monospace;
+  }
+}
+
+// Buttons innerhalb der Layer Card
+.card-actions-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+
+  .btn-edit-action {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    &:hover { background: #2980b9; }
+  }
+
+  .btn-icon-delete {
+    background: #fff5f5;
+    color: #e74c3c;
+    border: 1px solid #fed7d7;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    &:hover { background: #e74c3c; color: white; }
+  }
+}
+
+.empty-state-box {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px;
+  color: #95a5a6;
+  border: 2px dashed #dee2e6;
+  border-radius: 10px;
 }

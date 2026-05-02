@@ -6,6 +6,7 @@ import { SvgCanvasComponent } from './svg-canvas/svg-canvas.component';
 import { PropertyPanelComponent } from './property-panel/property-panel.component';
 import { EditorStateService } from '../services/editor-state.service';
 import { MODULE_CONFIG_RULES } from '../domain/config/module-rules.config';
+import { ConfigNode } from '../domain/config/module-rules.config';
 
 @Component({
   selector: 'app-editor',
@@ -23,7 +24,7 @@ export class EditorComponent {
 
   moduleTypeKeys = Object.keys(MODULE_CONFIG_RULES);
   activeModuleId: string | null = null; // Trackt, welches Modul im Detail editiert wird
-  public fullXmlContent: string = '';
+  //public fullXmlContent: string = '';
 
   constructor(public editor: EditorStateService) {}
 
@@ -73,6 +74,32 @@ export class EditorComponent {
   trackByKey(index: number, item: any): string {
     return item.key;
   }
+
+
+// In deiner EditorComponent oder im Service
+getOrderedAttributes(node: ConfigNode): {key: string, value: any}[] {
+  // 1. Finde die Definition für diesen Tag-Namen
+  let definition: any = null;
+  for (const module of Object.values(MODULE_CONFIG_RULES)) {
+    if (module.definitions[node.tag]) {
+      definition = module.definitions[node.tag];
+      break;
+    }
+  }
+
+  const result: {key: string, value: any}[] = [];
+  if (definition && definition.attributes) {
+    // 2. Gehe die Liste der erlaubten Attribute in der definierten Reihenfolge durch
+    definition.attributes.forEach((attrKey: string) => {
+      if (node.attributes[attrKey] !== undefined) {
+        result.push({ key: attrKey, value: node.attributes[attrKey] });
+      }
+    });
+  } else {
+    return Object.keys(node.attributes).map(k => ({key: k, value: node.attributes[k]}));
+  }
+  return result;
+}
 
   scrollToModule(moduleId: string) {
     this.activeModuleId = moduleId;
