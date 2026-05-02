@@ -215,46 +215,48 @@ hasTextChildren(node: ConfigNode): boolean {
       ) || '';
     }
 
-    addChildFromSchema(parent: ConfigNode, tagName: string) {
-
-      const possible = this.getPossibleChildren(parent);
-
-        if (!possible.includes(tagName)) {
-          console.warn(`Tag ${tagName} ist hier nicht (mehr) erlaubt!`);
-          return;
-        }
-      const context = this.getActiveModuleContext(parent) || parent.attributes['name'];
-      const definition = MODULE_CONFIG_RULES[context]?.definitions[tagName];
-
-      const newNode: ConfigNode = {
-        id: 'ID' + Math.random(),
-        tag: tagName,
-        attributes: {},
-        children: [],
-        isOpen: true
-      };
-
-      if (definition?.attributes) {
-        definition.attributes.forEach(a => newNode.attributes[a] = '');
-      }
-
-      // TextTags (wie Username) als Kinder mit Flag anlegen
-      if (definition?.textTags) {
-        definition.textTags.forEach(t => {
-          newNode.children.push({
-            id: 'T' + Math.random(),
-            tag: t,
-            attributes: {},
-            children: [],
-            textContent: '',
-            isTextTag: true
-          });
-        });
-      }
-
-      parent.children.push(newNode);
-      this.updateModules();
+  addChildFromSchema(parent: ConfigNode, tagName: string) {
+    const possible = this.getPossibleChildren(parent);
+    if (!possible.includes(tagName)) {
+      console.warn(`Tag ${tagName} ist hier nicht (mehr) erlaubt!`);
+      return;
     }
+
+    const context = this.getActiveModuleContext(parent) || parent.attributes['name'];
+    const definition = MODULE_CONFIG_RULES[context]?.definitions[tagName];
+
+    const newNode: ConfigNode = {
+      id: 'ID' + Math.random(),
+      tag: tagName,
+      attributes: {},
+      children: [],
+      isOpen: true,
+      // --- NEU: Reihenfolge aus der Config merken ---
+      attributeOrder: definition?.attributes || []
+    };
+
+    if (definition?.attributes) {
+      definition.attributes.forEach(a => newNode.attributes[a] = '');
+    }
+
+    // TextTags (wie Username)
+    if (definition?.textTags) {
+      definition.textTags.forEach(t => {
+        newNode.children.push({
+          id: 'T' + Math.random(),
+          tag: t,
+          attributes: {},
+          children: [],
+          textContent: '',
+          isTextTag: true,
+          attributeOrder: [] // TextTags haben meist keine Attribute
+        });
+      });
+    }
+
+    parent.children.push(newNode);
+    this.updateModules();
+  }
 
     removeModule(mod: ConfigNode) {
       this.modules$.next(this.modules$.value.filter(m => m !== mod));
@@ -485,32 +487,37 @@ deleteSelected() {
   }
 
   // --- REKURSIVE WANDLER ---
-  private xmlToConfigNode(el: Element): ConfigNode {
-    const node: ConfigNode = {
-      id: crypto.randomUUID(),
-      tag: el.tagName,
-      attributes: {},
-      children: [],
-      textContent: '',
-      isTextTag: false
-    };
+ private xmlToConfigNode(el: Element): ConfigNode {
+   const node: ConfigNode = {
+     id: crypto.randomUUID(),
+     tag: el.tagName,
+     attributes: {},
+     children: [],
+     textContent: '',
+     isTextTag: false,
+     attributeOrder: [] // Initial leer
+   };
 
-    Array.from(el.attributes).forEach(a => node.attributes[a.name] = a.value);
+   // --- NEU: Regel suchen und Reihenfolge im Knoten cachen ---
+   const rule = this.getRuleForNode(node);
+   if (rule && rule.definitions[el.tagName]) {
+     node.attributeOrder = rule.definitions[el.tagName].attributes;
+   }
 
-     /*Spezialbehandlung: Wenn das Element nur Text hat (z.B. <Host>localhost</Host>)*/
-    if (el.children.length === 0 && el.textContent?.trim()) {
-       node.textContent = el.textContent;
-       node.isTextTag = true;
-    } else {
-      Array.from(el.children).forEach(child => {
-        // Visu und Nodes im Baum überspringen, da wir sie separat managen
-        if (child.tagName !== 'Visualization' && child.tagName !== 'Nodes') {
-          node.children.push(this.xmlToConfigNode(child));
-        }
-      });
-    }
-    return node;
-  }
+   Array.from(el.attributes).forEach(a => node.attributes[a.name] = a.value);
+
+   if (el.children.length === 0 && el.textContent?.trim()) {
+     node.textContent = el.textContent;
+     node.isTextTag = true;
+   } else {
+     Array.from(el.children).forEach(child => {
+       if (child.tagName !== 'Visualization' && child.tagName !== 'Nodes') {
+         node.children.push(this.xmlToConfigNode(child));
+       }
+     });
+   }
+   return node;
+ }
 
  private configNodeToXml(doc: Document, node: ConfigNode): Element {
    const el = doc.createElement(node.tag);

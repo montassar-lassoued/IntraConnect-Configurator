@@ -183,28 +183,40 @@
               </div>
 
               <ng-template #nodeTemplate let-node let-parentArray="parentArray">
-                <div class="tag-block" [class.nested]="!node.isTextTag">
+                <div class="tag-block">
 
+                  <!-- 1. ZEILE: DER NAME (Fett / Farbe) -->
                   <div class="tag-header">
-                    <div class="tag-label">
-                      <span class="tag-bracket"></span>
-                      <span class="tag-name">{{ node.tag }}</span>
-                      <span class="tag-bracket"></span>
-                    </div>
-                    <button (click)="editor.removeNode(parentArray, node)" class="btn-minimal" title="Löschen">×</button>
+                    <span class="tag-name">{{ node.tag }}</span>
+                    <button (click)="editor.removeNode(parentArray, node)" class="btn-minimal">🗑️</button>
                   </div>
 
+                  <!-- DER ABSATZ (Eingerückt) -->
                   <div class="tag-content">
 
-                    <div class="attribute-grid" *ngIf="(node.attributes | keyvalue).length > 0">
-                      <div *ngFor="let attr of node.attributes | keyvalue; trackBy: trackByKey" class="input-field">
-                        <label>{{ attr.key }}</label>
-                        <input [(ngModel)]="$any(node.attributes)[$any(attr.key)]"
-                               (ngModelChange)="editor.updateModules()"
-                               [ngModelOptions]="{ updateOn: 'blur' }">
-                      </div>
+                    <!-- 2. ZEILE: DIE ATTRIBUTE (Nebeneinander) -->
+                    <div class="attribute-grid" *ngIf="node.attributes">
+                      <!-- 1. Zuerst die Attribute in der richtigen Reihenfolge laut Cache -->
+                      <ng-container *ngFor="let attrKey of node.attributeOrder">
+                        <div class="input-field" *ngIf="node.attributes[attrKey] !== undefined">
+                          <label>{{ attrKey }}</label>
+                          <input [(ngModel)]="node.attributes[attrKey]"
+                                 (ngModelChange)="editor.updateModules()"
+                                 [ngModelOptions]="{ updateOn: 'blur' }">
+                        </div>
+                      </ng-container>
+
+                      <!-- 2. Fallback: Falls ein Attribut im XML war, das NICHT in der Regel steht -->
+                      <ng-container *ngFor="let attr of node.attributes | keyvalue">
+                        <div class="input-field" *ngIf="!node.attributeOrder?.includes($any(attr.key))">
+                          <label>{{ attr.key }}</label>
+                          <input [(ngModel)]="node.attributes[$any(attr.key)]"
+                                 (ngModelChange)="editor.updateModules()">
+                        </div>
+                      </ng-container>
                     </div>
 
+                    <!-- 3. ZEILE: TEXT-ELEMENTE (z.B. User/Pass) -->
                     <div class="text-tag-area" *ngIf="editor.hasTextChildren(node)">
                       <ng-container *ngFor="let sub of node.children">
                         <div *ngIf="sub.isTextTag" class="text-input-field">
@@ -214,6 +226,7 @@
                       </ng-container>
                     </div>
 
+                    <!-- 4. ZEILE: KINDER-TAGS (Rekursiv) -->
                     <div class="nested-children-area">
                       <ng-container *ngFor="let nested of node.children">
                         <div *ngIf="!nested.isTextTag">
@@ -222,19 +235,15 @@
                       </ng-container>
                     </div>
 
+                    <!-- 5. ZEILE: ADD BUTTONS -->
                     <div class="tag-footer-actions" *ngIf="!node.isTextTag">
                       <button *ngFor="let nextTag of editor.getPossibleChildren(node)"
                               (click)="editor.addChildFromSchema(node, nextTag)" class="btn-add-sub">
-                        + {{ nextTag }}
+                        + Add {{ nextTag }}
                       </button>
                     </div>
-                  </div>
 
-                  <div class="tag-header footer-tag" *ngIf="!node.isTextTag">
-                    <span class="tag-bracket"></span>
-                    <span class="tag-name">{{ node.tag }}</span>
-                    <span class="tag-bracket"></span>
-                  </div>
+                  </div> <!-- Ende Absatz -->
                 </div>
               </ng-template>
             </div>
